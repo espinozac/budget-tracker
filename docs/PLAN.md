@@ -8,7 +8,7 @@ Last updated: 2026-09-30. Owner: Carlos.
 
 Read this section before doing anything else.
 
-1. Read `ai/CONVENTIONS.md`, then this file. CONVENTIONS wins on code style; this file wins on scope and decisions. If they conflict, add the conflict to Open questions.
+1. Read `ai/CONVENTIONS.md`, then this file. CONVENTIONS wins on code style; this file wins on scope and decisions. If they conflict, add the conflict to Open questions. Known conflict until Phase 1 syncs CONVENTIONS: it still says to mirror types in `client/src/types.ts`; follow this file and use `@budget/shared`.
 2. Claim before you start: set the phase's row in the Status table to `In progress (<agent>, <date>)`. Do not start a phase another agent has claimed.
 3. Follow the phase's Tests first list: write the failing tests, make them pass, then refactor.
 4. Tick a checklist item (`- [x]`) only after its check has actually passed.
@@ -25,18 +25,19 @@ Read this section before doing anything else.
 | 1. Scaffold the monorepo | 25 min | Not started | |
 | 2. Domain model, schemas, and store | 30 min | Not started | |
 | 3. REST endpoints | 30 min | Not started | |
-| 4. React UI | 65 min | Not started | Pick UI packages at the start |
-| 5. Enhancement | 45 min | Waiting on the pick | See Open questions |
+| 4. React UI | 65 min | Not started | Pick the AI feature before starting; pick UI packages at the start |
+| 5. AI enhancement | 45 min | Not started | Which AI feature: see Open questions |
 | 6. README and WRITEUP | 25 min | Not started | |
 
 ## Open questions
 
-- [ ] Enhancement for Phase 5: AI category suggestions (recommended) or Spending insights (runner-up). Needed before Phase 5 starts, not before Phase 1.
+- [x] Enhancement type: an AI feature (decided 2026-09-30).
+- [ ] Which AI feature: decide before Phase 4 starts (about 1:25 on the timebox), so the form or filter panel leaves the right hook. Options and rules are in Phase 5; AI category suggestions is the recommendation.
 - [ ] UI packages: decide at the start of Phase 4, from the shortlist there.
 
 ## Requirements from the brief
 
-The brief lives outside the repo, so this is the short version.
+The PDF stays out of git, since it is the company's exercise. For local agents, drop a copy at `docs/BRIEF.pdf` (gitignored in Phase 1). This is the short version.
 
 - Data model: `id` (auto-generated uuid), `date`, `description`, `amount` (positive number), `type` (`income` or `expense`), `category`. Any extension must be documented.
 - API: `GET /api/transactions` with optional `type`, `category`, and `search` (matches description); `POST /api/transactions`; `PUT /api/transactions/:id`; `DELETE /api/transactions/:id`; `GET /api/summary` returning total income, total expenses, and net balance.
@@ -78,7 +79,7 @@ Out of scope, per the brief and CONVENTIONS: auth, deploy, a database, and DI co
 | 3. REST endpoints | 30 | 0:55 | 1:25 |
 | 4. React UI | 65 | 1:25 | 2:30 |
 | Checkpoint: core app done | | 2:30 | |
-| 5. Enhancement | 45 | 2:30 | 3:15 |
+| 5. AI enhancement | 45 | 2:30 | 3:15 |
 | 6. README and WRITEUP | 25 | 3:15 | 3:40 |
 | Buffer | 20 | 3:40 | 4:00 |
 
@@ -100,9 +101,9 @@ All accepted on 2026-09-30. Each one becomes a line in the WRITEUP.
 | Summary scope | `GET /api/summary` always returns all-time `totalIncome`, `totalExpenses`, and `netBalance`, plus a `filteredTotals` object with the same three fields for the query params sent. Those params use the same schema as `GET /api/transactions`; with none, `filteredTotals` equals the all-time totals. The panel shows the all-time totals, and a line above the list shows `filteredTotals`. | One request feeds both the panel and the filtered line, one query schema serves both endpoints, and the response shape never changes. Alt: send `filteredTotals` as null when no filters are passed. | Accepted |
 | Update semantics | PUT replaces every editable field using the POST schema. `id` never changes; unknown keys are stripped; no PATCH. | One input schema, standard PUT meaning. | Accepted |
 | Errors | 400 with Zod field errors for a bad body, query, or id format; 404 for a well-formed id that does not exist. Body: `{ error: { message, details? } }`. | Per CONVENTIONS; field errors map straight onto form fields. | Accepted |
-| Editing in the UI | The brief's list only needs delete. If time allows, Edit loads a row into the same form and saves with PUT. | Puts PUT to use for little code. Inline edit, if picked as the enhancement, replaces it. | Accepted |
+| Editing in the UI | The brief's list only needs delete. If time allows, Edit loads a row into the same form and saves with PUT. | Puts PUT to use for little code, and it is the first UI feature to cut if time runs short. | Accepted |
 | Shared types | A small `shared` workspace package (`@budget/shared`) holds the Zod schemas and the types inferred from them. `client` and `server` depend on it with `workspace:*`; it ships as TypeScript source, so there is no build step. | One source of truth: the form validates with the exact rules the server enforces, and a contract change fails both typechecks at once. Alt: mirror types in `client/src/types.ts`, the CONVENTIONS default, and accept drift risk. | Accepted |
-| Runtime and install | Latest releases throughout: Node 26 in `.nvmrc`, the newest pnpm pinned via `packageManager`, and every dependency added at `@latest` with the lockfile committed. As of 2026-09-30 that means Vite 8, React 19, Tailwind 4, Express 5, Zod 4, Vitest 5, and TypeScript 7. `engines` states the real floor (Node 22.12+), and flagged build scripts are approved in `pnpm-workspace.yaml`. | The brief's README is only a template. Latest versions show current practice, and the lockfile keeps installs repeatable. The Vite template still pins TypeScript 6.0; bump it, and fall back only if something breaks, noting it in the WRITEUP. | Accepted |
+| Runtime and install | Latest dependencies: every package added at `@latest` with the lockfile committed; as of 2026-09-30 that means Vite 8, React 19, Tailwind 4, Express 5, Zod 4, Vitest 5, and TypeScript 7. Runtime: Node 22 LTS in `.nvmrc`, matching the `engines` floor (`>=22.12`); newer Node releases also work. The newest pnpm is pinned via `packageManager`, and flagged build scripts are approved in `pnpm-workspace.yaml`. | The brief's README is only a template. Latest packages show current practice and the lockfile keeps installs repeatable. Node is the one thing a reviewer installs, so it stays on the LTS floor every tool supports. The Vite template still pins TypeScript 6.0; bump it, and fall back only if something breaks, noting it in the WRITEUP. | Accepted (revised after review) |
 
 ## Phase 1: Scaffold the monorepo (about 25 min)
 
@@ -111,19 +112,20 @@ Both apps start from one root command, and the page reaches the server through t
 **Goals**
 
 - A pnpm workspace with `client`, `server`, and `shared`; root scripts fan out with `pnpm -r`.
-- Latest releases throughout: Node 26, the newest pnpm, and every dependency added at `@latest`, with the lockfile committed.
+- Latest dependencies at `@latest` with the lockfile committed, on Node 22 LTS (`.nvmrc`) and the newest pnpm.
 - `shared` (`@budget/shared`) is source-only: its `exports` point at `src/index.ts`, so Vite, tsx, and Vitest compile it and there is no build step. `client` and `server` depend on it with `workspace:*`.
 - Server: Express with strict TypeScript, run by `tsx watch`. `app.ts` builds the app and `index.ts` only listens, so tests import the app without opening a port.
 - Client: `pnpm create vite client --template react-ts`, then Tailwind v4 through `@tailwindcss/vite`. Delete the demo assets, keep the template's oxlint setup, and bump its TypeScript pin (6.0) to the latest.
 - Vite proxies `/api` to `http://localhost:3001`, so the client uses relative URLs and the server needs no CORS.
 - Vitest in `shared` and `server`, plus Supertest in the server, with a smoke test in each.
-- Thin `AGENTS.md` and `CLAUDE.md` that point agents at `ai/CONVENTIONS.md`, this file (`docs/PLAN.md`), and the test commands. Add `shared/` to the layout in `ai/CONVENTIONS.md` so agents stop mirroring types.
+- Agent files: thin `AGENTS.md` and `CLAUDE.md` that point agents at `ai/CONVENTIONS.md`, this file (`docs/PLAN.md`), and the test commands, plus an empty `ai/NOTES.md` so AI use is logged from day one.
+- Sync `ai/CONVENTIONS.md` with this plan, since agents read it first: add `shared/` to the layout, point the `schemas.ts` and `types.ts` rows at `shared/src` (the server keeps only server-only schemas), replace the client's mirrored `types.ts` with imports from `@budget/shared`, and add the range filters to the API section.
 
 **Key files**
 
 - `package.json` (root, private): `dev` runs `pnpm -r --parallel run dev`; `test` and `typecheck` run across packages; `engines.node` is `>=22.12`; `packageManager` pins pnpm.
 - `pnpm-workspace.yaml`: the three packages, a `catalog` entry so every package uses one Zod version, and `allowBuilds` for any dependency pnpm flags (esbuild, which tsx uses, is the likely one).
-- `.gitignore` (node_modules, dist, .env, `server/data/`, .DS_Store) and `.nvmrc` (26).
+- `.gitignore`: already committed; it covers node_modules, dist, `.env`, `data/`, and .DS_Store. Add `docs/BRIEF.pdf` if the repo will be public. `.nvmrc`: 22.
 - `shared/package.json`: `"name": "@budget/shared"`, `"type": "module"`, `exports` pointing at `./src/index.ts`, `zod` from the catalog, and `test` and `typecheck` scripts.
 - `shared/tsconfig.json`: `strict`, ESM, `moduleResolution: "Bundler"`, `noEmit`.
 - `shared/src/index.ts`: re-exports schemas and types; it starts with one placeholder type to prove both apps can import it.
@@ -139,13 +141,17 @@ Both apps start from one root command, and the page reaches the server through t
 - `client/src/index.css`: `@import "tailwindcss";`
 - `client/src/App.tsx`: a placeholder heading, the health status, and the shared placeholder type in use.
 - `AGENTS.md` and `CLAUDE.md` (the latter can simply import `@AGENTS.md`).
+- `ai/NOTES.md`: empty, with one heading per phase for the AI-use log.
+- `ai/CONVENTIONS.md`: synced with this plan (see Goals).
 
 **Done when**
 
 - [ ] From a fresh clone, `pnpm install` then `pnpm dev` starts both apps; http://localhost:5173 renders and shows the health check passing through the proxy.
 - [ ] Both apps import the placeholder type from `@budget/shared`, and `pnpm test` and `pnpm typecheck` pass in all three packages.
 - [ ] The server starts with no `.env` file present.
-- [ ] First commit.
+- [ ] `AGENTS.md`, `CLAUDE.md`, and an empty `ai/NOTES.md` exist.
+- [ ] `ai/CONVENTIONS.md` matches this plan: `shared/` in the layout, no mirrored client types, range filters listed.
+- [ ] Commit.
 
 Fallback: if wiring `shared` takes more than 15 minutes, mirror the types in `client/src/types.ts` and say so in the WRITEUP.
 
@@ -167,7 +173,7 @@ The model keeps the brief's six fields unchanged. Ordering uses insertion order 
 - `shared/src/types.ts`: `Transaction`, `TransactionInput`, `TransactionQuery`, `Totals`, `Summary`, `ApiErrorBody`, inferred from the schemas where possible.
 - `server/src/schemas.ts`: server-only schemas: `IdParamsSchema` (uuid) and the env config (`PORT`, `DATA_FILE`, `ALLOW_FUTURE_DATES`).
 - `server/src/store.ts`: `createStore({ filePath?, seed? })` returning `list(query)`, `get(id)`, `create(input)`, `update(id, input)`, `remove(id)`, `summary(query)`, `categories()`. `summary(query)` returns the all-time totals plus `filteredTotals`, computed with the same filter function as `list`.
-- `server/src/seed.ts`: about 12 sample rows, dated relative to today across two months.
+- `server/src/seed.ts`: about 12 sample rows, dated relative to today across two months, with a few repeated descriptions so the AI feature's history path has matches.
 - `shared/src/schemas.test.ts`, `server/src/store.test.ts`.
 
 **Tests first**
@@ -180,6 +186,7 @@ The model keeps the brief's six fields unchanged. Ordering uses insertion order 
 - `createStore` takes plain options. That is a factory argument, not DI, and it is what lets route tests use a fresh in-memory store.
 - Synchronous `fs` writes are fine for one user and a tiny file. Read the data file with `fs` rather than `import`, so writes do not restart `tsx watch`.
 - A corrupt data file stops startup with a clear message instead of being overwritten.
+- Timebox the schema edge cases to the list above. If one fights back (for example the `2026-02-30` refine), skip it, note it here, and move on.
 - Future dates: `shared/src/schemas.ts` exports a small refine that rejects dates after a given day, and `createApp` applies it when `ALLOW_FUTURE_DATES` is false. The flag defaults to `true`, is read in `index.ts`, and is listed in `server/.env.example`. Today means the server's local date.
 
 **Done when**
@@ -286,7 +293,7 @@ flowchart TD
 - Likely: `sonner` for add, delete, and error toasts in place of a hand-rolled live region (check that screen readers announce them); `vitest` for the client helper tests.
 - Optional: `@tanstack/react-query` instead of the custom hook; `lucide-react` for the search and filter icons (icon-only buttons still need `aria-label`); `react-error-boundary` for one page-level fallback; `clsx` and `tailwind-merge` only if a `cn()` helper earns its place.
 - Skip: `jotai` and `luxon`. Filters live in `App` and dates are plain `YYYY-MM-DD` strings, so neither pays for itself; revisit `luxon` only if the enhancement needs month math. CONVENTIONS already skips TanStack Router, neverthrow, MSW, Playwright, and a Biome plus oxlint pair, and rules out the React Compiler here. TanStack Form, t3-env, and Lefthook add little at this size.
-- Phase 5: whatever the enhancement needs, such as Recharts or papaparse. AI suggestions add nothing on the client.
+- Phase 5: none expected; the AI feature is server work plus a small UI hook.
 
 **Goals**
 
@@ -295,6 +302,16 @@ flowchart TD
 - State sits where it is used: filters in `App`, shared by the filter bar and the hook; form fields inside the form, so typing there does not re-render the list. No `useMemo` or `useCallback` without a measured reason.
 - Accessibility: a visible `<label htmlFor>` on every input; errors under fields, tied with `aria-describedby` and `aria-invalid`; a real `<table>` with `<caption>` and `<th scope="col">`; `focus-visible` rings; income and expense shown by text and sign, not color alone; a polite live region announces adds and deletes.
 - Every state renders something useful: loading, empty ("No transactions yet"), no matches (with Clear filters), and server down (with Retry).
+- Leave one clean hook for the chosen AI feature: for example an `onDescriptionBlur` callback in the form for suggestions, or a way to fill the filter panel's draft for natural-language filters.
+
+**Build order** (this phase carries the most risk; the last items are the first to cut)
+
+1. List with delete, then the summary panel.
+2. The add form with validation.
+3. Search, then the Filters panel with type and category (Apply, Close, Clear all).
+4. The amount and date range inputs in the panel.
+5. The filtered totals line above the list.
+6. Edit through the form.
 
 **Key files**
 
@@ -321,57 +338,65 @@ flowchart TD
 - [ ] Loading, empty, no-match, and server-down states each render.
 - [ ] A keyboard-only pass works: tab order, visible focus, Enter submits, labels announced.
 - [ ] `pnpm typecheck` passes; commit.
+- [ ] Mid-phase check at about 2:00: if search, type, and category filters are not working yet, take cut items 2 to 4 now.
 - [ ] Clock check: past about 2:30, take the cut list before Phase 5.
 
-## Phase 5: Enhancement (about 45 min)
+## Phase 5: AI enhancement (about 45 min)
 
-Recommendation: AI category suggestions, history first with an LLM fallback. Spending insights is the runner-up if you want zero setup for reviewers. The pick is still open (see Open questions); once it is made, rewrite the Scope, Key files, and Tests first below for the chosen option and log the change.
+The enhancement is an AI feature; which one is picked before Phase 4 starts. The recommendation is AI category suggestions, history first with an LLM fallback, because it demos with no API key and keeps category data clean at the source.
 
-| Option | What the user gets | Time | Risk | Works on a cold start |
+**Rules for any AI option**
+
+- It works with no API key: a deterministic path (history, simple rules, or a template) gives a useful result, and the LLM only improves on it.
+- The key is optional and server-side only (`ANTHROPIC_API_KEY` in `server/.env`); the browser never calls the model.
+- One adapter, `server/src/llm.ts`, owns the provider call, the prompt, a timeout of about 3 seconds, and Zod validation of the reply, reusing the shared schemas where they fit.
+- Model output never overwrites what the user typed, and results are announced to screen readers.
+- The README says it plainly: "Optional key; without it, [the no-key behavior]."
+
+| Option | What the user gets | Without a key | Hook | Time |
 | --- | --- | --- | --- | --- |
-| **AI category suggestions** (recommended) | A category suggested from the description, so names stay consistent and totals and filters stay trustworthy | 45 to 60 min, tight | Medium: external API, key, latency | History path yes; AI path needs a key |
-| **Spending insights** (runner-up) | Where the money went this month and whether spending is rising: top categories with their share, plus change vs last month | 35 to 45 min | Low | Yes, with seed data |
-| Inline edit | Fix a row in place instead of in the form | 40 to 60 min | Low to medium: focus handling | Yes |
-| CSV import | Load a bank export instead of typing rows | 60 to 90 min | Medium to high: date and amount formats, duplicates | Yes, with a sample file |
-| Monthly category budgets (own idea) | The planning half of a budget tracker: a limit per category, progress, overspend | 60 to 75 min | Medium: new entity, endpoints, UI | Yes |
-| Recurring transactions | Bills and paychecks that create themselves | 90 min or more | High: series vs instance edits, month ends | Yes |
+| **AI category suggestions** (recommended) | A category filled in from the description | Suggestions from history (repeat descriptions) | Form: description blur | 45 to 60 min |
+| Natural-language filters | "food over $50 last month" fills the filter panel | Plain search on the text | Filter panel draft | 45 to 60 min |
+| Smart paste | Paste a bank line or note; the form is pre-filled for review | A small parser for amount and date | Form: a paste box | 45 to 60 min |
+| AI spending summary | Two or three sentences on this month vs last, from computed numbers | A template sentence from the same numbers | A panel under the summary | 40 to 50 min |
+
+All four are tight for a 45-minute slot, so the no-key path ships first and the LLM path second. Non-AI ideas considered earlier (spending charts, CSV import, budgets, inline edit, recurring) are out; they can go in the WRITEUP's next steps.
 
 **Why the recommendation**
 
 - Categories drive every total and filter, and free-text entry drifts ("Food", "food", "Groceries"). Suggesting at entry keeps the data clean at the source.
-- History first makes repeat descriptions instant, free, private, and keyless. The LLM only sees descriptions it has never seen before.
+- History first makes repeat descriptions instant, free, private, and keyless, so a reviewer sees it work on a cold start. The LLM only sees descriptions it has never seen before.
 - It shows judgment about AI inside a product: validated model output, a timeout, a graceful fallback, and never overwriting what the user typed.
 
-CSV import and budgets are strong ideas, but each is a second small app in this timebox; they make good WRITEUP next steps. Recurring hides too much complexity for 45 minutes, and inline edit adds less value than the others.
-
-**Scope if the recommendation is picked**
+**Scope if AI category suggestions is picked** (for another option, rewrite this block and the next two, and log the change)
 
 - `POST /api/categories/suggest` takes `{ description, type }` and returns `{ category, source }`, where `source` is `history`, `ai`, or `none`.
 - History first: the most recent transaction with the same description (after lowercase and trim) supplies the category.
-- Otherwise, with a key set: one call to a small, fast model, given the user's existing categories as the preferred list. The reply is validated with Zod as a short name, under a 3-second timeout.
+- Otherwise, with a key set: one call to a small, fast model, given the user's existing categories as the preferred list. The reply is validated with Zod as a short name, under the timeout.
 - No key, a timeout, or bad output returns `none`, and the form works as before.
 - Client: on description blur, if category is still empty and untouched, fill it and label it "Suggested from your history" (or "by AI"). The live region announces it, and a typed category is never replaced.
 
 **Key files**
 
 - `server/src/suggest.ts`: `suggestCategory(input, history, llm?)`. The history match is pure; the model call arrives as a function, so tests pass a stub.
-- `server/src/llm.ts`: the provider call, prompt, output check, and timeout. The env names below assume Anthropic; any provider fits behind this file.
+- `server/src/llm.ts`: the provider call, prompt, output check, and timeout. The env names assume Anthropic; any provider fits behind this file.
 - `server/src/routes/categories.ts`: the suggest route. `createApp(store, { llm })` takes the function as a plain parameter.
 - `client/src/api.ts` and `client/src/components/TransactionForm.tsx`: the call and the labeled suggestion.
 - `server/.env.example`: optional `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`.
 
 **Tests first**
 
-- A history hit returns its category with `source: "history"` and never calls the model.
+- The no-key path: a history hit returns its category with `source: "history"` and never calls the model.
 - A stubbed model returns a category; junk output or a thrown error returns `none`.
 - Route: 400 for a blank description; 200 with the stubbed model.
 
-**Done when (any option)**
+**Done when**
 
-- [ ] Works on a cold start, or degrades gracefully without optional config.
+- [ ] With no key set, the feature still demos on a cold start (the seed data gives it history to use).
+- [ ] With a key set, the LLM path works and times out cleanly.
 - [ ] The core logic is a small unit-tested function, and one route test covers the endpoint.
 - [ ] Usable by keyboard and screen reader, with async results announced.
-- [ ] README lists any new env vars; WRITEUP covers why, the value, and the trade-offs; any model or API extension is documented.
+- [ ] README states the optional key and the no-key behavior; WRITEUP covers why, the value, and the trade-offs; the new endpoint is documented.
 - [ ] Commit.
 
 ## Phase 6: README and WRITEUP (about 25 min)
@@ -380,18 +405,20 @@ A reviewer goes from clone to running app by following the README word for word,
 
 **README** (the brief's template, adapted to pnpm)
 
-- Prerequisites: Node 26, the latest release, with 22.12 or later as the floor, and pnpm (`npm install -g pnpm`; the repo pins its version through `packageManager`).
+- Prerequisites: Node 22.12 or later (`.nvmrc` pins 22 LTS; newer releases also work) and pnpm (`npm install -g pnpm`; the repo pins its version through `packageManager`).
 - Setup: `pnpm install` once, at the root.
 - Run: `pnpm dev` starts both apps, or use two terminals with `pnpm --filter server dev` and `pnpm --filter client dev`. Open http://localhost:5173.
 - Test: `pnpm test` and `pnpm typecheck`.
 - Environment variables: a table mirroring `server/.env.example`, marking each one required or optional.
-- Notes: the persistence choice and how to reset data, the seed data, two `curl` examples, any model or API extensions, and known limits.
+- API: the five brief endpoints plus every extension: `GET /api/categories`, the extra query params (`minAmount`, `maxAmount`, `startDate`, `endDate`), the summary's `filteredTotals` shape, and the AI endpoint, with two `curl` examples.
+- AI feature: "Optional key; without it, [the no-key behavior]", plus the env var to set.
+- Notes: a one-line pointer to how the brief was interpreted (the WRITEUP and the Decisions in `docs/PLAN.md`), the persistence choice and how to reset data, the seed data, and known limits.
 
 **WRITEUP** (aim for about 500 words)
 
 | Section | Words | Pull from |
 | --- | --- | --- |
-| What I built and notable decisions | about 150 | The Decisions table: the calls a reviewer would question (persistence, money, dates, summary scope) |
+| What I built and notable decisions | about 150 | The Decisions table: the calls a reviewer would question (persistence, money, dates, the API extensions, and all-time plus filtered totals) |
 | How I used AI tools | about 150 | `ai/NOTES.md`: specific prompts, what worked, what it got wrong, where it was steered |
 | The enhancement | about 125 | Phase 5: the problem, why this over the others, the value, the trade-offs |
 | Next steps | about 75 | The cut list and the options that were skipped |
@@ -403,7 +430,8 @@ A reviewer goes from clone to running app by following the README word for word,
 **Done when**
 
 - [ ] Cold-start test: clone into a new folder, follow the README word for word, and the app runs and the tests pass.
-- [ ] WRITEUP is 400 to 600 words (`wc -w WRITEUP.md`).
+- [ ] README documents every API extension and the optional AI key with its no-key behavior.
+- [ ] WRITEUP is 400 to 600 words (`wc -w WRITEUP.md`) and has one sentence on why the summary returns both all-time and filtered totals.
 - [ ] Both read in Carlos's voice: short, direct, and edited by him even where an assistant drafted them.
 - [ ] Final commit; push, and grant access if the repo is private.
 
@@ -416,7 +444,7 @@ Test the logic that can fail silently (validation, filtering, money math, status
 | Shared schemas | Vitest | Valid input passes trimmed; each rule rejects; query blanks, bad values, and inverted ranges | 10 |
 | Store | Vitest | CRUD, each filter and the combination, order, cents-exact summary, JSON round trip | 12 |
 | Routes | Vitest and Supertest | Happy path plus the main 400 and 404 per endpoint; malformed JSON; one error shape | 14 |
-| Enhancement | Vitest | Its core function, plus one route test (model stubbed, if AI) | 4 to 6 |
+| AI enhancement | Vitest | The no-key path, the stubbed-model path, junk output, plus one route test | 4 to 6 |
 | Client helpers (optional) | Vitest | Form parsing, date and currency formatting | 4 |
 | UI | By hand | The Phase 4 checklist, including a keyboard-only pass | checklist |
 
@@ -443,17 +471,19 @@ Most lost time on this stack comes from a few known traps. Several are also wher
 - One Zod copy: the catalog entry keeps `shared`, `server`, and `client` on the same version; two copies break `instanceof` checks.
 - Tailwind v4 needs no `tailwind.config.js`, yet assistants often scaffold the v3 setup.
 - The Vite template now ships oxlint rather than ESLint and pins TypeScript 6.0. typescript-eslint does not support TypeScript 7 yet, so don't let an assistant add ESLint back.
+- Recent majors (TypeScript 7, Vitest 5, Vite 8) are new to assistants and to some plugins. If one misbehaves, pin the previous major, note it in the Progress log, and move on; the lockfile keeps reviewers on the same versions.
 - Express 5 requires named wildcards (`/*splat`). A final `app.use` handler for the JSON 404 avoids wildcard routes entirely.
 - pnpm 11 and later fail the install on a flagged build script with no `allowBuilds` entry. Test the cold install once before submitting.
 
 **Cut list** (in this order, if the core app is not done by about 2:30)
 
 1. Client unit tests.
-2. The filtered totals line above the list; the endpoint still returns `filteredTotals`.
-3. Edit through the form; PUT stays covered by the API tests.
-4. `GET /api/categories`; fall back to presets plus names from the loaded rows.
-5. JSON persistence; fall back to memory only and say so in the README.
-6. The enhancement's extras; ship its core path only (history-only suggestions, or top categories without the month comparison).
+2. Edit through the form; PUT stays covered by the API tests.
+3. The amount and date range inputs in the filter panel; the API keeps the params and their tests.
+4. The filtered totals line above the list; the endpoint still returns `filteredTotals`.
+5. `GET /api/categories`; fall back to presets plus names from the loaded rows.
+6. JSON persistence; fall back to memory only and say so in the README.
+7. The AI feature's LLM path; ship the no-key path (for example history-only suggestions) and describe the LLM path as a next step.
 
 Never cut: server validation, error and empty states, labels and keyboard access, the README cold start, or the WRITEUP.
 
@@ -463,7 +493,8 @@ Newest first. One line per work session: date, who, what changed, commit.
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
-| 2026-09-30 | Claude (Cowork) with Carlos | Plan drafted and reviewed; all 13 decisions accepted; saved as `docs/PLAN.md`. | not yet committed |
+| 2026-09-30 | Claude (Cowork) with Carlos | Applied the plan review: Node 22 LTS in `.nvmrc`; the enhancement is an AI feature, picked before Phase 4; Phase 1 and 6 checklists; Phase 4 build order; cut list reordered; brief kept out of git. | not yet committed |
+| 2026-09-30 | Claude (Cowork) with Carlos | Plan drafted and reviewed; all 13 decisions accepted; saved as `docs/PLAN.md`. | fec7308 |
 
 ## Sources
 
