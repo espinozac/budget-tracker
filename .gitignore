@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Builds & caches
+dist/
+build/
+out/
+.vite/
+.turbo/
+*.tsbuildinfo
+
+# Logs & debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test & coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Runtime / local data
+*.local
+*.pid
+*.seed
+*.pid.lock
+data/
+tmp/
+temp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors / IDEs
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.swp
+*.swo
+*~
+
+# Optional tooling
+.eslintcache
+.stylelintcache
+*.pem
+.cache/
