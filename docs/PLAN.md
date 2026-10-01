@@ -490,7 +490,7 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
-| 2026-10-01 | Cursor | Phase 2: shared Zod schemas/types, server store (cents, JSON write-through), seed, server env schemas. Review fixes: exact 2-decimal amounts, trimmed query blanks, case-insensitive categories(), calendar-month seed, NOTES. `2026-02-30` rejected by `z.iso.date()` (no extra refine). Replaced `HealthStatus`; added server `zod` catalog dep. | pending |
+| 2026-10-01 | Cursor | Phase 2: shared Zod schemas/types, server store (cents, JSON write-through), seed, server env schemas. Review fixes: exact 2-decimal amounts, trimmed query blanks, case-insensitive categories(), calendar-month seed, NOTES. `2026-02-30` rejected by `z.iso.date()` (no extra refine). Replaced `HealthStatus`; added server `zod` catalog dep. | a49a62d |
 | 2026-09-30 | Cursor | Phase 1 scaffold: pnpm workspace (client/server/shared), Express `/api/health`, Vite+Tailwind proxy, agent files, CONVENTIONS sync. Root `dev`/`test` use `--if-present` (shared has neither). packageManager `pnpm@12.8.1`. | b3f66a5 |
 | 2026-09-30 | Claude (Cowork) with Carlos | Locked AI category suggestions; TanStack Query for client server state; Phase 4 done list allows logged cuts; Phase 2 gated on the CONVENTIONS sync; `DATA_FILE` resolution noted; `docs/BRIEF.pdf` gitignored. | 2ce707b |
 | 2026-09-30 | Claude (Cowork) with Carlos | Applied the plan review: Node 22 LTS in `.nvmrc`; the enhancement is an AI feature, picked before Phase 4; Phase 1 and 6 checklists; Phase 4 build order; cut list reordered; brief kept out of git. | d047c38 |
