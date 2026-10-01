@@ -84,6 +84,7 @@ export function TransactionForm({
 }: TransactionFormProps) {
   const formId = useId();
   const descriptionRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
   const categoryTouchedRef = useRef(editing !== null);
   const categoryValueRef = useRef(
     editing !== null ? editing.category : "",
@@ -161,10 +162,9 @@ export function TransactionForm({
     if (description === "") {
       return;
     }
-    suggestMutation.mutate({
-      description: values.description,
-      type: values.type,
-    });
+    setSuggestionSource(null);
+    onAnnounce?.("Finding category suggestion");
+    suggestMutation.mutate({ description: values.description });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -199,9 +199,12 @@ export function TransactionForm({
     return (fieldErrors[field]?.length ?? 0) > 0;
   }
 
-  const suggestionHint = suggestionSource
-    ? suggestionLabel(suggestionSource)
-    : null;
+  const suggestionPending = suggestMutation.isPending;
+  const suggestionHint = suggestionPending
+    ? "Finding category suggestion…"
+    : suggestionSource
+      ? suggestionLabel(suggestionSource)
+      : null;
   const categoryDescribedBy = [
     fieldInvalid("category") ? errorId("category") : null,
     suggestionHint !== null ? `${formId}-category-suggestion` : null,
@@ -256,6 +259,13 @@ export function TransactionForm({
               setField("description", e.target.value);
             }}
             onBlur={handleDescriptionBlur}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") {
+                return;
+              }
+              e.preventDefault();
+              amountRef.current?.focus();
+            }}
             aria-invalid={fieldInvalid("description")}
             aria-describedby={
               fieldInvalid("description")
@@ -283,6 +293,7 @@ export function TransactionForm({
               Amount
             </label>
             <input
+              ref={amountRef}
               id={`${formId}-amount`}
               name="amount"
               type="number"

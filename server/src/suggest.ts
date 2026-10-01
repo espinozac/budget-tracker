@@ -26,6 +26,8 @@ function categoriesFromHistory(history: Transaction[]): string[] {
 /**
  * Suggest a category from history first (same description after lowercase+trim,
  * most recent by date). The llm is only for a miss; callers may omit it.
+ * Type is intentionally ignored: the form suggests on description blur before
+ * the user has necessarily chosen income vs expense.
  */
 export async function suggestCategory(
   input: CategorySuggestInput,
@@ -55,7 +57,6 @@ export async function suggestCategory(
   try {
     const category = await llm(
       input.description,
-      input.type,
       categoriesFromHistory(history),
     );
     if (category === null || category.trim() === "") {

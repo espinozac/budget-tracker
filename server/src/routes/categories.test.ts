@@ -9,7 +9,7 @@ describe("POST /api/categories/suggest", () => {
     const app = createApp(createStore());
     const res = await request(app)
       .post("/api/categories/suggest")
-      .send({ description: "   ", type: "expense" });
+      .send({ description: "   " });
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
@@ -35,7 +35,7 @@ describe("POST /api/categories/suggest", () => {
 
     const res = await request(app)
       .post("/api/categories/suggest")
-      .send({ description: "coffee", type: "expense" });
+      .send({ description: "coffee" });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ category: "Food", source: "history" });
@@ -45,7 +45,7 @@ describe("POST /api/categories/suggest", () => {
     const app = createApp(createStore());
     const res = await request(app)
       .post("/api/categories/suggest")
-      .send({ description: "Never seen before", type: "expense" });
+      .send({ description: "Never seen before" });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ category: null, source: "none" });
@@ -57,7 +57,7 @@ describe("POST /api/categories/suggest", () => {
 
     const res = await request(app)
       .post("/api/categories/suggest")
-      .send({ description: "Metro card", type: "expense" });
+      .send({ description: "Metro card" });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ category: "Transport", source: "ai" });
@@ -72,7 +72,7 @@ describe("POST /api/categories/suggest", () => {
 
     const res = await request(app)
       .post("/api/categories/suggest")
-      .send({ description: "Metro card", type: "expense" });
+      .send({ description: "Metro card" });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ category: null, source: "none" });

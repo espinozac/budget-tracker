@@ -135,7 +135,6 @@ export const CategorySuggestInputSchema = z.object({
     .trim()
     .min(1, "Enter a description")
     .max(200, "Description must be 200 characters or fewer"),
-  type: TransactionTypeSchema,
 });
 
 export const CategorySuggestSourceSchema = z.enum(["history", "ai", "none"]);

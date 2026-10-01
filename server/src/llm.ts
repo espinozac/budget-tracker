@@ -1,9 +1,7 @@
 import { z } from "zod";
-import type { TransactionType } from "@budget/shared";
 
 export type Llm = (
   description: string,
-  type: TransactionType,
   existing: string[],
 ) => Promise<string | null>;
 
@@ -55,9 +53,10 @@ export function createLlm(
     env.LLM_BASE_URL?.trim() || "https://api.x.ai/v1"
   ).replace(/\/$/, "");
   const model = env.LLM_MODEL?.trim() || "grok-4.7";
-  const timeoutMs = options.timeoutMs ?? 3000;
+  // grok-4.7 often spends a few seconds reasoning before the JSON reply.
+  const timeoutMs = options.timeoutMs ?? 8000;
 
-  return async (description, type, existing) => {
+  return async (description, existing) => {
     try {
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
@@ -70,19 +69,21 @@ export function createLlm(
           model,
           temperature: 0,
           max_tokens: 30,
+          reasoning_effort: "low",
           response_format: { type: "json_object" },
           messages: [
             {
               role: "system",
               content:
                 'You categorize personal budget transactions. Reply only with JSON: {"category": string}. ' +
-                "Pick the best match from the provided categories. Only if none fit, propose a short Title Case category (1-3 words).",
+                "Always return a category. Prefer a match from the provided categories. " +
+                "Only if none fit, propose a short Title Case category (1-3 words). " +
+                "Never reply with null or an empty string.",
             },
             {
               role: "user",
               content: JSON.stringify({
                 description,
-                type,
                 categories: existing,
               }),
             },

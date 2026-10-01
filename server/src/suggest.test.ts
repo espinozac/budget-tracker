@@ -38,7 +38,7 @@ describe("suggestCategory (history path)", () => {
     const llm = vi.fn<Llm>();
 
     const result = await suggestCategory(
-      { description: "Coffee", type: "expense" },
+      { description: "Coffee" },
       history,
       llm,
     );
@@ -53,7 +53,7 @@ describe("suggestCategory (history path)", () => {
     ];
 
     const result = await suggestCategory(
-      { description: " coffee", type: "expense" },
+      { description: " coffee" },
       history,
     );
 
@@ -75,7 +75,7 @@ describe("suggestCategory (history path)", () => {
     ];
 
     const result = await suggestCategory(
-      { description: "Coffee", type: "expense" },
+      { description: "Coffee" },
       history,
     );
 
@@ -88,7 +88,7 @@ describe("suggestCategory (history path)", () => {
     ];
 
     const result = await suggestCategory(
-      { description: "Uber", type: "expense" },
+      { description: "Uber" },
       history,
     );
 
@@ -103,20 +103,34 @@ describe("suggestCategory (llm path)", () => {
     const llm = vi.fn<Llm>().mockResolvedValue("Transport");
 
     const result = await suggestCategory(
-      { description: "Metro card", type: "expense" },
+      { description: "Metro card" },
       history,
       llm,
     );
 
     expect(result).toEqual({ category: "Transport", source: "ai" });
     expect(llm).toHaveBeenCalledOnce();
+    expect(llm).toHaveBeenCalledWith("Metro card", ["Food"]);
+  });
+
+  it("passes all history categories to the llm (not filtered by type)", async () => {
+    const mixed = [
+      tx({ description: "Coffee", type: "expense", category: "Food" }),
+      tx({ description: "Paycheck", type: "income", category: "Salary" }),
+      tx({ description: "Bonus", type: "income", category: "Side" }),
+    ];
+    const llm = vi.fn<Llm>().mockResolvedValue("Taxes");
+
+    await suggestCategory({ description: "Income Tax" }, mixed, llm);
+
+    expect(llm).toHaveBeenCalledWith("Income Tax", ["Food", "Salary", "Side"]);
   });
 
   it("returns none for blank junk output from the stub", async () => {
     const llm = vi.fn<Llm>().mockResolvedValue("   ");
 
     const result = await suggestCategory(
-      { description: "Metro card", type: "expense" },
+      { description: "Metro card" },
       history,
       llm,
     );
@@ -130,7 +144,7 @@ describe("suggestCategory (llm path)", () => {
     });
 
     const result = await suggestCategory(
-      { description: "Metro card", type: "expense" },
+      { description: "Metro card" },
       history,
       llm,
     );
@@ -142,7 +156,7 @@ describe("suggestCategory (llm path)", () => {
     const llm = vi.fn<Llm>().mockRejectedValue(new Error("aborted"));
 
     const result = await suggestCategory(
-      { description: "Metro card", type: "expense" },
+      { description: "Metro card" },
       history,
       llm,
     );
@@ -154,7 +168,7 @@ describe("suggestCategory (llm path)", () => {
     const llm = vi.fn<Llm>().mockResolvedValue(null);
 
     const result = await suggestCategory(
-      { description: "Metro card", type: "expense" },
+      { description: "Metro card" },
       history,
       llm,
     );

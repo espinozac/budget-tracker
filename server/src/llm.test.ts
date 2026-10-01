@@ -33,7 +33,7 @@ describe("createLlm", () => {
     const llm = createLlm({});
     expect(llm).toBeDefined();
 
-    await llm!("Coffee", "expense", ["Food"]);
+    await llm!("Coffee", ["Food"]);
 
     expect(fetchMock.mock.calls[0]![1].headers).toMatchObject({
       Authorization: expect.stringMatching(/^Bearer xai-/),
@@ -53,7 +53,7 @@ describe("createLlm", () => {
       LLM_MODEL: "",
     });
 
-    await llm!("Coffee", "expense", ["Food"]);
+    await llm!("Coffee", ["Food"]);
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, init] = fetchMock.mock.calls[0]!;
@@ -72,6 +72,7 @@ describe("createLlm", () => {
       model: "grok-4.7",
       temperature: 0,
       max_tokens: 30,
+      reasoning_effort: "low",
     });
     if (
       typeof body !== "object" ||
@@ -84,7 +85,6 @@ describe("createLlm", () => {
     }
     expect(JSON.parse(body.messages[1].content)).toEqual({
       description: "Coffee",
-      type: "expense",
       categories: ["Food"],
     });
   });
@@ -97,7 +97,7 @@ describe("createLlm", () => {
     const llm = createLlm({ LLM_API_KEY: "test-key" });
     expect(llm).toBeDefined();
 
-    const result = await llm!("Uber", "expense", ["Food", "Transport"]);
+    const result = await llm!("Uber", ["Food", "Transport"]);
     expect(result).toBeNull();
   });
 
@@ -108,7 +108,7 @@ describe("createLlm", () => {
     );
     const llm = createLlm({ LLM_API_KEY: "test-key" });
 
-    const result = await llm!("Uber", "expense", ["Food"]);
+    const result = await llm!("Uber", ["Food"]);
     expect(result).toBeNull();
   });
 
@@ -119,7 +119,7 @@ describe("createLlm", () => {
     );
     const llm = createLlm({ LLM_API_KEY: "test-key" });
 
-    const result = await llm!("Uber", "expense", ["Food"]);
+    const result = await llm!("Uber", ["Food"]);
     expect(result).toBeNull();
   });
 
@@ -142,7 +142,7 @@ describe("createLlm", () => {
     );
     const llm = createLlm({ LLM_API_KEY: "test-key" }, { timeoutMs: 20 });
 
-    const result = await llm!("Uber", "expense", ["Food"]);
+    const result = await llm!("Uber", ["Food"]);
     expect(result).toBeNull();
   });
 
@@ -155,7 +155,7 @@ describe("createLlm", () => {
     );
     const llm = createLlm({ LLM_API_KEY: "test-key" });
 
-    const result = await llm!("Uber", "expense", ["Food"]);
+    const result = await llm!("Uber", ["Food"]);
     expect(result).toBeNull();
   });
 
@@ -171,7 +171,7 @@ describe("createLlm", () => {
     );
     const llm = createLlm({ LLM_API_KEY: "test-key" });
 
-    const result = await llm!("Uber", "expense", ["Food"]);
+    const result = await llm!("Uber", ["Food"]);
     expect(result).toBeNull();
   });
 
@@ -187,7 +187,7 @@ describe("createLlm", () => {
     );
     const llm = createLlm({ LLM_API_KEY: "test-key" });
 
-    const result = await llm!("Uber", "expense", ["Food"]);
+    const result = await llm!("Uber", ["Food"]);
     expect(result).toBeNull();
   });
 
@@ -202,7 +202,7 @@ describe("createLlm", () => {
     );
     const llm = createLlm({ LLM_API_KEY: "test-key" });
 
-    const result = await llm!("Uber", "expense", ["Food"]);
+    const result = await llm!("Uber", ["Food"]);
     expect(result).toBeNull();
   });
 
@@ -217,7 +217,7 @@ describe("createLlm", () => {
     );
     const llm = createLlm({ LLM_API_KEY: "test-key" });
 
-    const result = await llm!("Groceries", "expense", ["Food", "Transport"]);
+    const result = await llm!("Groceries", ["Food", "Transport"]);
     expect(result).toBe("Food");
   });
 
@@ -232,7 +232,7 @@ describe("createLlm", () => {
     );
     const llm = createLlm({ LLM_API_KEY: "test-key" });
 
-    const result = await llm!("Uber", "expense", ["Food"]);
+    const result = await llm!("Uber", ["Food"]);
     expect(result).toBe("Ride Share");
   });
 });
