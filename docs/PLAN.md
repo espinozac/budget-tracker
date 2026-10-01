@@ -490,7 +490,7 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
-| 2026-10-01 | Cursor | Phase 5: history-first category suggestions + optional Groq LLM (`createLlm`, POST /api/categories/suggest, form blur). Review fixes: restore PLAN from HEAD, stale-suggestion guard, llm test gaps, empty LLM_* defaults. Leftover polish: announce re-read, categoryTouched ref-only, discriminated CategorySuggestResultSchema + shared tests, no as cast in llm.test. | pending |
+| 2026-10-01 | Cursor | Phase 5: history-first category suggestions + optional Groq LLM (`createLlm`, POST /api/categories/suggest, form blur). Review fixes: restore PLAN from HEAD, stale-suggestion guard, llm test gaps, empty LLM_* defaults. Leftover polish: announce re-read, categoryTouched ref-only, discriminated CategorySuggestResultSchema + shared tests, no as cast in llm.test. | 806dff8 |
 | 2026-10-01 | Claude (Cowork) with Carlos | Phase 5 LLM: Groq free tier via OpenAI-compatible fetch (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`) instead of Anthropic. | fc93113 |
 | 2026-10-01 | Cursor | Phase 4 polish R1-R5: focus first invalid filter field; visible delete failure alert; focusOnMount only after Edit/Cancel/Save; Net balance back in summary dl; show 4xx message above list. | 8c565ee |
 | 2026-10-01 | Cursor | Phase 4 review fixes: B1 range validation + no full-page on 4xx + retry skip 4xx; S1 delete catch; S2 emerald-700; S3 form key remount; S4 friendly Zod messages; S5 untick commit; N2/N3/N5/N6/N7/N9 cleanup. N1 Clear all stays draft-only (user request; note in WRITEUP). N4 single table and N10 client unit tests not done (cut item 1). N8 left for Phase 5. | 8c565ee |
