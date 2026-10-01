@@ -83,7 +83,7 @@ The server listens on http://localhost:3001. Through the client, the same routes
 | `DELETE /api/transactions/:id` | None | 204, no body | 400 bad id; 404 unknown id |
 | `GET /api/summary` | Same filters as the list | 200, `Summary` (below) | 400 bad filter |
 | `GET /api/categories` (extension) | None | 200, distinct category names (case-insensitive), sorted | None expected |
-| `POST /api/categories/suggest` (extension) | `{ description, type }` | 200, `{ category, source }` | 400 invalid body |
+| `POST /api/categories/suggest` (extension) | `{ description }` | 200, `{ category, source }` | 400 invalid body |
 | `GET /api/health` (extension) | None | 200, `{ "ok": true }` | None expected |
 
 **Transaction**
@@ -135,7 +135,7 @@ The top-level totals are always all-time. `filteredTotals` has the same three fi
 
 **Category suggestion**
 
-Send `{ "description": string, "type": "income" | "expense" }`. The reply is `{ "category": string | null, "source": "history" | "ai" | "none" }`, and `category` is null only when `source` is `none`. See [AI suggestions](#ai-suggestions).
+Send `{ "description": string }`. The reply is `{ "category": string | null, "source": "history" | "ai" | "none" }`, and `category` is null only when `source` is `none`. Type is not part of the request: suggestions run on description blur before the user has necessarily chosen income vs expense. See [AI suggestions](#ai-suggestions).
 
 **Errors**
 
@@ -164,7 +164,7 @@ curl -sS "http://localhost:3001/api/transactions?search=coffee&type=expense&minA
 # Suggest a category: returns {"category":"Food","source":"history"}
 curl -sS http://localhost:3001/api/categories/suggest \
   -H "Content-Type: application/json" \
-  -d '{"description":"Coffee","type":"expense"}'
+  -d '{"description":"Coffee"}'
 ```
 
 ## AI suggestions
@@ -185,7 +185,7 @@ To use your own key (or force history-only):
 2. If you have not yet, copy the example env file: `cp server/.env.example server/.env`.
 3. Set `LLM_API_KEY=<your key>` in `server/.env` and restart the server, or set `LLM_API_KEY=` (empty) for history only. `LLM_BASE_URL` and `LLM_MODEL` default to `https://api.x.ai/v1` and `grok-4.7` when unset.
 
-The key stays on the server; the browser never calls the model. Each call has a 3-second timeout, and the reply is validated before use. A timeout, a rate limit (429), or a bad reply means no suggestion, not an error.
+The key stays on the server; the browser never calls the model. Each call has an 8-second timeout (reasoning models like grok-4.7 often need a few seconds), and the reply is validated before use. A timeout, a rate limit (429), or a bad reply means no suggestion, not an error.
 
 ## Notes
 

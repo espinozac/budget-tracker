@@ -353,7 +353,7 @@ The enhancement is AI category suggestions: history first, with an optional LLM 
 
 - It works with no API key: suggestions come from history, and the LLM only covers descriptions history has never seen.
 - The LLM is Groq's free tier through its OpenAI-compatible API. The key is optional and server-side only (`LLM_API_KEY` in `server/.env`); the browser never calls the model.
-- One adapter, `server/src/llm.ts`, owns the call (plain `fetch` to `/chat/completions`, no SDK), the prompt, a timeout of about 3 seconds, and Zod validation of the reply. A 429 from the free tier's rate limit is treated like any other failure.
+- One adapter, `server/src/llm.ts`, owns the call (plain `fetch` to `/chat/completions`, no SDK), the prompt, a timeout of about 8 seconds, and Zod validation of the reply. A 429 from the free tier's rate limit is treated like any other failure.
 - A suggestion never overwrites what the user typed, and it is announced to screen readers.
 - The README says it plainly: "Optional API key; without it, suggestions use history only."
 
@@ -367,7 +367,7 @@ Also considered: natural-language filters, smart paste, and an AI spending summa
 
 **Scope**
 
-- `POST /api/categories/suggest` takes `{ description, type }` and returns `{ category, source }`, where `source` is `history`, `ai`, or `none`.
+- `POST /api/categories/suggest` takes `{ description }` and returns `{ category, source }`, where `source` is `history`, `ai`, or `none`. Type is omitted on purpose: the form suggests on description blur while income/expense may still be the default.
 - History first: the most recent transaction with the same description (after lowercase and trim) supplies the category.
 - Otherwise, with a key set: one call to a small, fast model (default `grok-4.7` via xAI OpenAI-compatible chat completions, configurable), given the user's existing categories as the preferred list. The reply is validated with Zod as a short name, under the timeout.
 - No key, a timeout, or bad output returns `none`, and the form works as before.
@@ -490,6 +490,8 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
+| 2026-10-01 | Cursor | Suggest: drop type from suggest input/prompt (description blur happens before type is chosen); keep 8s timeout + reasoning_effort low + in-flight "Finding category suggestion" UI. | pending |
+| 2026-10-01 | Cursor | Suggest polish: type used in system prompt + same-type categories for LLM; timeout 3s->8s (grok-4.7 reasoning latency was returning none); form shows "Finding category suggestion" while in flight. | pending |
 | 2026-10-01 | Claude (Cowork) | Phase 6: README rewritten to the Phase 6 spec (prereqs, run, test, env table from `server/.env.example`, API with extensions and error shape, two curl examples, AI key, notes and known limits); WRITEUP drafted at 539 words for Carlos to edit. Commands, env vars, and curl examples checked in a scratch clone. No root `lint` script exists, so the README uses `pnpm --filter client lint`. Cold start, voice edit, and push left for Carlos. | pending |
 | 2026-10-01 | Cursor | Phase 5: history-first category suggestions + optional Groq LLM (`createLlm`, POST /api/categories/suggest, form blur). Review fixes: restore PLAN from HEAD, stale-suggestion guard, llm test gaps, empty LLM_* defaults. Leftover polish: announce re-read, categoryTouched ref-only, discriminated CategorySuggestResultSchema + shared tests, no as cast in llm.test. | 806dff8 |
 | 2026-10-01 | Claude (Cowork) with Carlos | Phase 5 LLM: Groq free tier via OpenAI-compatible fetch (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`) instead of Anthropic. | fc93113 |

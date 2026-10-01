@@ -29,13 +29,14 @@ I implemented the application in six phases. For each phase, a similar prompt wa
 
 To try to prevent free-text category drift, when you leave Description and Category is still empty, the app suggests one. Before calling an LLM, the suggest logic checks if the description is one you have used before and reuses its category. With an OpenAI-compatible LLM configured, a new description is sent to it within a prompt that also provides the existing categories. The LLM will match the description to one of the existing categories or propose a new one. This flow avoids unnecessary LLM calls and their cost.
 
-Trade-offs: the model call has a 3-second timeout, and Zod validates the reply. A timeout or bad output just means no suggestion. A suggestion never overwrites what you typed.
+Trade-offs: the model call has an 8-second timeout, and Zod validates the reply. A timeout or bad output just means no suggestion. A suggestion never overwrites what you typed.
 
 ## Next steps
+
 
 - Client unit tests and Playwright E2E tests.
 - Use a database for persistence. Add `createdDate` and `modifiedDate` to transaction entries.
 - Better UI: layout, notifications of success or failure, icons, colors for types, responsive design, more help/info messages, and a spinning icon while processing.
 - Authentication.
 - Re-suggest when the description changes, as long as you have not typed a category.
-- Natural-language filters, like "coffee over $5 last month", mapped onto the existing query params so the server still validates them.
+- Improve the category-suggestion prompt and pick a faster, still accurate, LLM model so suggestions feel snappier.
