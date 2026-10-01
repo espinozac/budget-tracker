@@ -2,7 +2,7 @@
 
 This is the working plan for the Personal Budget Tracker take-home. It is the single source of truth for scope, decisions, and progress. Humans and AI agents both read and update it.
 
-Last updated: 2026-09-30. Owner: Carlos.
+Last updated: 2026-10-01. Owner: Carlos.
 
 ## How agents use this file
 
@@ -24,7 +24,7 @@ Read this section before doing anything else.
 | --- | --- | --- | --- |
 | 1. Scaffold the monorepo | 25 min | Done (2026-09-30) | |
 | 2. Domain model, schemas, and store | 30 min | Done (2026-09-30) | CONVENTIONS synced in Phase 1 |
-| 3. REST endpoints | 30 min | Not started | |
+| 3. REST endpoints | 30 min | Done (2026-10-01) | |
 | 4. React UI | 65 min | Not started | Leave the suggest-on-blur hook in the form; confirm UI packages at the start |
 | 5. AI enhancement | 45 min | Not started | AI category suggestions |
 | 6. README and WRITEUP | 25 min | Not started | |
@@ -247,7 +247,7 @@ Example response for `GET /api/summary?type=expense&startDate=2026-09-01&endDate
 - `server/src/routes/transactions.ts`: `transactionsRouter(store)` for list, create, update, and delete.
 - `server/src/routes/summary.ts`: `summaryRouter(store)`.
 - `server/src/routes/categories.ts`: `categoriesRouter(store)`.
-- `server/src/app.ts`: `createApp(store)` mounts the routers with `express.json()`, the JSON 404, and the error handler (Zod or bad JSON to 400, `HttpError` to its status, anything else to 500).
+- `server/src/app.ts`: `createApp(store, options?)` mounts the routers with `express.json()`, the JSON 404, and the error handler (Zod or bad JSON to 400, `HttpError` to its status, anything else to 500). `options.allowFutureDates` (default true) applies the shared future-date refine to POST and PUT.
 - `server/src/index.ts`: builds the file-backed store, seeding when the file is missing, and starts the app.
 - `server/src/routes/transactions.test.ts`, `server/src/routes/summary.test.ts`.
 
@@ -261,10 +261,10 @@ Example response for `GET /api/summary?type=expense&startDate=2026-09-01&endDate
 
 **Done when**
 
-- [ ] Route tests pass, and every error body has the same shape.
-- [ ] A manual `curl` pass against the running server matches the tables above; keep two of those commands for the README.
-- [ ] Data survives a server restart.
-- [ ] Commit.
+- [x] Route tests pass, and every error body has the same shape.
+- [x] A manual `curl` pass against the running server matches the tables above; keep two of those commands for the README.
+- [x] Data survives a server restart.
+- [x] Commit.
 
 ## Phase 4: React UI (about 65 min)
 
@@ -490,6 +490,7 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
+| 2026-10-01 | Cursor | Phase 3: REST routes (transactions/summary/categories), HttpError/parse, createApp(store, options) with allowFutureDates, JSON 404 and error handler, file-backed boot+seed. Review fixes: tsx --env-file-if-exists, narrow malformed-JSON detection, forward Express 4xx (413), tighter route tests, curl keepers in NOTES. Plan Key files updated for createApp options. | pending |
 | 2026-10-01 | Cursor | Phase 2: shared Zod schemas/types, server store (cents, JSON write-through), seed, server env schemas. Review fixes: exact 2-decimal amounts, trimmed query blanks, case-insensitive categories(), calendar-month seed, NOTES. `2026-02-30` rejected by `z.iso.date()` (no extra refine). Replaced `HealthStatus`; added server `zod` catalog dep. | a49a62d |
 | 2026-09-30 | Cursor | Phase 1 scaffold: pnpm workspace (client/server/shared), Express `/api/health`, Vite+Tailwind proxy, agent files, CONVENTIONS sync. Root `dev`/`test` use `--if-present` (shared has neither). packageManager `pnpm@12.8.1`. | b3f66a5 |
 | 2026-09-30 | Claude (Cowork) with Carlos | Locked AI category suggestions; TanStack Query for client server state; Phase 4 done list allows logged cuts; Phase 2 gated on the CONVENTIONS sync; `DATA_FILE` resolution noted; `docs/BRIEF.pdf` gitignored. | 2ce707b |

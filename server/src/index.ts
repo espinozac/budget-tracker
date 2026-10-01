@@ -1,8 +1,16 @@
 import { createApp } from "./app";
+import { loadEnv, resolveDataFile } from "./schemas";
+import { buildSeedTransactions } from "./seed";
+import { createStore } from "./store";
 
-const port = Number(process.env.PORT) || 3001;
-const app = createApp();
+const env = loadEnv();
+const filePath = resolveDataFile(env.DATA_FILE);
+const store = createStore({
+  filePath,
+  seed: buildSeedTransactions(),
+});
+const app = createApp(store, { allowFutureDates: env.ALLOW_FUTURE_DATES });
 
-app.listen(port, () => {
-  console.log(`Server listening on http://localhost:${port}`);
+app.listen(env.PORT, () => {
+  console.log(`Server listening on http://localhost:${env.PORT}`);
 });

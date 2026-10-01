@@ -12,6 +12,19 @@ Asked Cursor for Phase 2 only (schemas, store, seed). It removed the Phase 1 `He
 
 ## Phase 3: REST endpoints
 
+Asked Cursor for Phase 3 only (tests first, then routes). Followed user brief for `createApp(store, options)` / `allowFutureDates` over the Phase 3 Key files' bare `createApp(store)`; plan Key files updated. No blockers; Express 5 promise forwarding meant no try/catch in routes.
+
+Review fixes: load `.env` via `tsx --env-file-if-exists`, stop treating every `SyntaxError` as malformed JSON, tighten 404/query assertions, return Express client statuses (e.g. 413), revert stray lockfile `@pnpm/exe` entries.
+
+README curl keepers:
+
+```bash
+curl -sS "http://localhost:3001/api/transactions?search=coffee&type=expense&startDate=2026-09-01&endDate=2026-10-01"
+curl -sS http://localhost:3001/api/transactions \
+  -H "Content-Type: application/json" \
+  -d '{"date":"2026-09-30","description":"Curl marker","amount":12.34,"type":"expense","category":"Food"}'
+```
+
 ## Phase 4: React UI
 
 ## Phase 5: AI category suggestions
