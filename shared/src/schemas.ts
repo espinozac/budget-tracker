@@ -3,18 +3,26 @@ import { z } from "zod";
 export const TransactionTypeSchema = z.enum(["income", "expense"]);
 
 const amountSchema = z
-  .number()
-  .positive()
+  .number({ error: "Enter a valid amount" })
+  .positive("Amount must be greater than 0")
   .refine((n) => Math.round(n * 100) / 100 === n, {
     message: "Amount can have at most 2 decimal places",
   });
 
 export const TransactionInputSchema = z.object({
-  date: z.iso.date(),
-  description: z.string().trim().min(1).max(200),
+  date: z.iso.date({ error: "Enter a valid date (YYYY-MM-DD)" }),
+  description: z
+    .string()
+    .trim()
+    .min(1, "Enter a description")
+    .max(200, "Description must be 200 characters or fewer"),
   amount: amountSchema,
   type: TransactionTypeSchema,
-  category: z.string().trim().min(1).max(100),
+  category: z
+    .string()
+    .trim()
+    .min(1, "Enter a category")
+    .max(100, "Category must be 100 characters or fewer"),
 });
 
 export const TransactionSchema = TransactionInputSchema.extend({

@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+@theme {
+  --color-navy-50: #e8f1f6;
+  --color-navy-100: #c5dce8;
+  --color-navy-700: #00609c;
+  --color-navy-800: #004977;
+  --color-navy-900: #003555;
+  --color-accent: #e87722;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background-color: #f1f5f9;
+    color: #0f172a;
+  }
+}
