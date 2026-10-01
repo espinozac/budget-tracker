@@ -25,17 +25,22 @@ playwright-report/
 test-results/
 blob-report/
 
-# Environment & secrets
+# Environment & secrets (keep *.example tracked)
 .env
 .env.*
 !.env.example
+!**/.env.example
+*.pem
+*.key
+credentials.json
 
-# Runtime / local data
+# Runtime / local data (server default: server/data/transactions.json)
 *.local
 *.pid
 *.seed
 *.pid.lock
 data/
+**/transactions.json
 tmp/
 temp/
 
@@ -50,6 +55,7 @@ Thumbs.db
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
+.cursor/
 *.swp
 *.swo
 *~
@@ -57,7 +63,6 @@ Thumbs.db
 # Optional tooling
 .eslintcache
 .stylelintcache
-*.pem
 .cache/
 
 # Take-home brief (kept out of git; local copy for agents)
