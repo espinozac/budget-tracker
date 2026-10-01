@@ -1,0 +1,10 @@
+packages:
+  - client
+  - server
+  - shared
+
+catalog:
+  zod: ^4.6.5
+
+allowBuilds:
+  esbuild: true

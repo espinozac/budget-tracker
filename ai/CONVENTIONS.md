@@ -12,6 +12,7 @@ budget-tracker/
   ai/CONVENTIONS.md   (this file)
   client/          Vite + React + TypeScript
   server/          Node + Express (or Fastify) + TypeScript
+  shared/          @budget/shared - Zod schemas and inferred types
   README.md
   WRITEUP.md
 ```
@@ -25,18 +26,28 @@ a folder clearly earns its keep.
 | --- | --- |
 | `index.ts` | Boot server |
 | `app.ts` | Express app, middleware, route mount |
-| `types.ts` | Shared domain types |
-| `schemas.ts` | Zod schemas for body / params / query |
+| `schemas.ts` | Server-only Zod schemas (e.g. id params, env) |
 | `store.ts` | In-memory (or JSON-file) persistence |
 | `routes/transactions.ts` | CRUD routes |
 | `routes/summary.ts` | Summary route |
+
+Domain types and shared request/response schemas live in `shared/src`
+(`schemas.ts`, `types.ts`), imported as `@budget/shared`.
+
+### Suggested `shared/src`
+
+| Path | Role |
+| --- | --- |
+| `schemas.ts` | Zod schemas for transactions, queries, summaries |
+| `types.ts` | Types inferred from those schemas |
+| `index.ts` | Package entry; re-exports schemas and types |
 
 ### Suggested `client/src`
 
 | Path | Role |
 | --- | --- |
 | `main.tsx` / `App.tsx` | Entry + page composition |
-| `types.ts` | Mirror server types (or import from a tiny shared package later) |
+| (no local `types.ts`) | Import domain types from `@budget/shared` |
 | `api.ts` | Typed `fetch` helpers for the REST API |
 | `components/*.tsx` | UI pieces (list, form, summary, filters) |
 | `hooks/*.ts` | Data hooks if useful (`useTransactions`) |
@@ -100,7 +111,7 @@ Call ambiguous choices in WRITEUP (e.g. amount always positive).
 - Return JSON shapes that the client can type once and reuse.
 - Use correct status codes: `200` / `201` / `204` / `400` / `404`.
 - Errors: small consistent body, e.g. `{ "error": { "message": string, "details"?: unknown } }`.
-- Filters on list: `type`, `category`, `search` (description contains, case-insensitive).
+- Filters on list: `type`, `category`, `search` (description contains, case-insensitive), plus inclusive amount range (`minAmount`, `maxAmount`) and date range (`startDate`, `endDate`).
 
 Do **not** add DI containers, CQRS buses, or Clean Architecture layers for this app.
 

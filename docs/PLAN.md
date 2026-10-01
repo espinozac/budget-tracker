@@ -8,7 +8,7 @@ Last updated: 2026-09-30. Owner: Carlos.
 
 Read this section before doing anything else.
 
-1. Read `ai/CONVENTIONS.md`, then this file. CONVENTIONS wins on code style; this file wins on scope and decisions. If they conflict, add the conflict to Open questions. Known conflict until Phase 1 syncs CONVENTIONS: it still says to mirror types in `client/src/types.ts`; follow this file and use `@budget/shared`. Do not start Phase 2 until that sync is done.
+1. Read `ai/CONVENTIONS.md`, then this file. CONVENTIONS wins on code style; this file wins on scope and decisions. If they conflict, add the conflict to Open questions. Do not start Phase 2 until Phase 1 has synced CONVENTIONS (shared package layout, no mirrored client types, range filters).
 2. Claim before you start: set the phase's row in the Status table to `In progress (<agent>, <date>)`. Do not start a phase another agent has claimed.
 3. Follow the phase's Tests first list: write the failing tests, make them pass, then refactor.
 4. Tick a checklist item (`- [x]`) only after its check has actually passed.
@@ -22,8 +22,8 @@ Read this section before doing anything else.
 
 | Phase | Estimate | Status | Notes |
 | --- | --- | --- | --- |
-| 1. Scaffold the monorepo | 25 min | Not started | |
-| 2. Domain model, schemas, and store | 30 min | Not started | Starts only after Phase 1 syncs `ai/CONVENTIONS.md` |
+| 1. Scaffold the monorepo | 25 min | Done (2026-09-30) | |
+| 2. Domain model, schemas, and store | 30 min | Not started | CONVENTIONS synced in Phase 1 |
 | 3. REST endpoints | 30 min | Not started | |
 | 4. React UI | 65 min | Not started | Leave the suggest-on-blur hook in the form; confirm UI packages at the start |
 | 5. AI enhancement | 45 min | Not started | AI category suggestions |
@@ -112,7 +112,7 @@ Both apps start from one root command, and the page reaches the server through t
 
 **Goals**
 
-- A pnpm workspace with `client`, `server`, and `shared`; root scripts fan out with `pnpm -r`.
+- A pnpm workspace with `client`, `server`, and `shared`; root scripts fan out with `pnpm -r` (`--if-present` on `dev` and `test` so packages without those scripts are skipped).
 - Latest dependencies at `@latest` with the lockfile committed, on Node 22 LTS (`.nvmrc`) and the newest pnpm.
 - `shared` (`@budget/shared`) is source-only: its `exports` point at `src/index.ts`, so Vite, tsx, and Vitest compile it and there is no build step. `client` and `server` depend on it with `workspace:*`.
 - Server: Express with strict TypeScript, run by `tsx watch`. `app.ts` builds the app and `index.ts` only listens, so tests import the app without opening a port.
@@ -124,7 +124,7 @@ Both apps start from one root command, and the page reaches the server through t
 
 **Key files**
 
-- `package.json` (root, private): `dev` runs `pnpm -r --parallel run dev`; `test` and `typecheck` run across packages; `engines.node` is `>=22.12`; `packageManager` pins pnpm.
+- `package.json` (root, private): `dev` runs `pnpm -r --parallel --if-present run dev`; `test` runs `pnpm -r --if-present run test`; `typecheck` runs across packages; `engines.node` is `>=22.12`; `packageManager` pins pnpm.
 - `pnpm-workspace.yaml`: the three packages, a `catalog` entry so every package uses one Zod version, and `allowBuilds` for any dependency pnpm flags (esbuild, which tsx uses, is the likely one).
 - `.gitignore`: already committed; it covers node_modules, dist, `.env`, `data/` (so `server/data/`), `docs/BRIEF.pdf`, and .DS_Store. `.nvmrc`: 22.
 - `shared/package.json`: `"name": "@budget/shared"`, `"type": "module"`, `exports` pointing at `./src/index.ts`, `zod` from the catalog, and `test` and `typecheck` scripts.
@@ -147,12 +147,12 @@ Both apps start from one root command, and the page reaches the server through t
 
 **Done when**
 
-- [ ] From a fresh clone, `pnpm install` then `pnpm dev` starts both apps; http://localhost:5173 renders and shows the health check passing through the proxy.
-- [ ] Both apps import the placeholder type from `@budget/shared`, and `pnpm test` and `pnpm typecheck` pass in all three packages.
-- [ ] The server starts with no `.env` file present.
-- [ ] `AGENTS.md`, `CLAUDE.md`, and an empty `ai/NOTES.md` exist.
-- [ ] `ai/CONVENTIONS.md` matches this plan: `shared/` in the layout, no mirrored client types, range filters listed.
-- [ ] Commit.
+- [x] From a fresh clone, `pnpm install` then `pnpm dev` starts both apps; http://localhost:5173 renders and shows the health check passing through the proxy.
+- [x] Both apps import the placeholder type from `@budget/shared`, and `pnpm test` and `pnpm typecheck` pass in all three packages.
+- [x] The server starts with no `.env` file present.
+- [x] `AGENTS.md`, `CLAUDE.md`, and an empty `ai/NOTES.md` exist.
+- [x] `ai/CONVENTIONS.md` matches this plan: `shared/` in the layout, no mirrored client types, range filters listed.
+- [x] Commit.
 
 Fallback: if wiring `shared` takes more than 15 minutes, mirror the types in `client/src/types.ts` and say so in the WRITEUP.
 
@@ -490,6 +490,7 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
+| 2026-09-30 | Cursor | Phase 1 scaffold: pnpm workspace (client/server/shared), Express `/api/health`, Vite+Tailwind proxy, agent files, CONVENTIONS sync. Root `dev`/`test` use `--if-present` (shared has neither). packageManager `pnpm@12.8.1`. | pending |
 | 2026-09-30 | Claude (Cowork) with Carlos | Locked AI category suggestions; TanStack Query for client server state; Phase 4 done list allows logged cuts; Phase 2 gated on the CONVENTIONS sync; `DATA_FILE` resolution noted; `docs/BRIEF.pdf` gitignored. | 2ce707b |
 | 2026-09-30 | Claude (Cowork) with Carlos | Applied the plan review: Node 22 LTS in `.nvmrc`; the enhancement is an AI feature, picked before Phase 4; Phase 1 and 6 checklists; Phase 4 build order; cut list reordered; brief kept out of git. | d047c38 |
 | 2026-09-30 | Claude (Cowork) with Carlos | Plan drafted and reviewed; all 13 decisions accepted; saved as `docs/PLAN.md`. | fec7308 |
