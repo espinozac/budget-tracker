@@ -169,21 +169,21 @@ curl -sS http://localhost:3001/api/categories/suggest \
 
 ## AI suggestions
 
-Optional API key; without it, suggestions use history only.
+`LLM_API_KEY` is optional: omit it to use the takehome demo default in `server/src/llm.ts`; set it to empty (`LLM_API_KEY=`) for history-only suggestions.
 
 When you leave the Description field and Category is still empty, the form asks the server for a suggestion:
 
 1. History first. If a past transaction has the same description (ignoring case and leading or trailing spaces), its category is used and labeled "Suggested from your history". This needs no key and works on a cold start with the seed data.
-2. Otherwise, if `LLM_API_KEY` is set, the server asks the model to pick one of your existing categories, or a short new one if none fit. It is labeled "Suggested by AI".
+2. Otherwise, if a key is available (your env value or the takehome default), the server asks the model to pick one of your existing categories, or a short new one if none fit. It is labeled "Suggested by AI".
 3. Otherwise there is no suggestion, and the form works as usual.
 
 A suggestion never replaces a category you typed, and it is announced through the page's live region.
 
-To turn on the AI path:
+To use your own key (or force history-only):
 
-1. Get an API key from your OpenAI-compatible provider (defaults target xAI: https://console.x.ai), or omit `LLM_API_KEY` to use the takehome demo default baked into `server/src/llm.ts` (for this exercise only; never commit secrets in production apps).
+1. Get an API key from your OpenAI-compatible provider (defaults target xAI: https://console.x.ai), or omit `LLM_API_KEY` to keep the takehome demo default (for this exercise only; never commit secrets in production apps).
 2. If you have not yet, copy the example env file: `cp server/.env.example server/.env`.
-3. Optionally set `LLM_API_KEY=<your key>` in `server/.env` and restart the server. `LLM_BASE_URL` and `LLM_MODEL` default to `https://api.x.ai/v1` and `grok-4.7` when unset. Set `LLM_API_KEY=` (empty) to force history-only suggestions.
+3. Set `LLM_API_KEY=<your key>` in `server/.env` and restart the server, or set `LLM_API_KEY=` (empty) for history only. `LLM_BASE_URL` and `LLM_MODEL` default to `https://api.x.ai/v1` and `grok-4.7` when unset.
 
 The key stays on the server; the browser never calls the model. Each call has a 3-second timeout, and the reply is validated before use. A timeout, a rate limit (429), or a bad reply means no suggestion, not an error.
 
