@@ -8,7 +8,7 @@ Last updated: 2026-09-30. Owner: Carlos.
 
 Read this section before doing anything else.
 
-1. Read `ai/CONVENTIONS.md`, then this file. CONVENTIONS wins on code style; this file wins on scope and decisions. If they conflict, add the conflict to Open questions. Known conflict until Phase 1 syncs CONVENTIONS: it still says to mirror types in `client/src/types.ts`; follow this file and use `@budget/shared`.
+1. Read `ai/CONVENTIONS.md`, then this file. CONVENTIONS wins on code style; this file wins on scope and decisions. If they conflict, add the conflict to Open questions. Known conflict until Phase 1 syncs CONVENTIONS: it still says to mirror types in `client/src/types.ts`; follow this file and use `@budget/shared`. Do not start Phase 2 until that sync is done.
 2. Claim before you start: set the phase's row in the Status table to `In progress (<agent>, <date>)`. Do not start a phase another agent has claimed.
 3. Follow the phase's Tests first list: write the failing tests, make them pass, then refactor.
 4. Tick a checklist item (`- [x]`) only after its check has actually passed.
@@ -23,21 +23,21 @@ Read this section before doing anything else.
 | Phase | Estimate | Status | Notes |
 | --- | --- | --- | --- |
 | 1. Scaffold the monorepo | 25 min | Not started | |
-| 2. Domain model, schemas, and store | 30 min | Not started | |
+| 2. Domain model, schemas, and store | 30 min | Not started | Starts only after Phase 1 syncs `ai/CONVENTIONS.md` |
 | 3. REST endpoints | 30 min | Not started | |
-| 4. React UI | 65 min | Not started | Pick the AI feature before starting; pick UI packages at the start |
-| 5. AI enhancement | 45 min | Not started | Which AI feature: see Open questions |
+| 4. React UI | 65 min | Not started | Leave the suggest-on-blur hook in the form; confirm UI packages at the start |
+| 5. AI enhancement | 45 min | Not started | AI category suggestions |
 | 6. README and WRITEUP | 25 min | Not started | |
 
 ## Open questions
 
 - [x] Enhancement type: an AI feature (decided 2026-09-30).
-- [ ] Which AI feature: decide before Phase 4 starts (about 1:25 on the timebox), so the form or filter panel leaves the right hook. Options and rules are in Phase 5; AI category suggestions is the recommendation.
-- [ ] UI packages: decide at the start of Phase 4, from the shortlist there.
+- [x] Which AI feature: AI category suggestions, history first with an optional LLM fallback (decided 2026-09-30).
+- [ ] Remaining UI packages: confirm at the start of Phase 4 from the shortlist there (TanStack Query is already decided).
 
 ## Requirements from the brief
 
-The PDF stays out of git, since it is the company's exercise. For local agents, drop a copy at `docs/BRIEF.pdf` (gitignored in Phase 1). This is the short version.
+The PDF stays out of git, since it is the company's exercise. For local agents, drop a copy at `docs/BRIEF.pdf`; `.gitignore` already excludes it. This is the short version.
 
 - Data model: `id` (auto-generated uuid), `date`, `description`, `amount` (positive number), `type` (`income` or `expense`), `category`. Any extension must be documented.
 - API: `GET /api/transactions` with optional `type`, `category`, and `search` (matches description); `POST /api/transactions`; `PUT /api/transactions/:id`; `DELETE /api/transactions/:id`; `GET /api/summary` returning total income, total expenses, and net balance.
@@ -57,7 +57,7 @@ Every choice below targets what the brief asks for: typed request/response contr
 **Shape of the app**
 
 - Server: `createApp(store)` in Express, three small routers, Zod at every boundary, and a store that works in memory and writes through to a JSON file.
-- Client: one page, one data hook, typed fetch helpers, four components (summary, form, filters, list).
+- Client: one page, one data hook on TanStack Query, typed fetch helpers, four components (summary, form, filters, list).
 - Shared: a small workspace package, `@budget/shared`, holds the Zod schemas and inferred types that both apps import.
 - Dev wiring: `pnpm dev` at the root runs both apps; Vite proxies `/api` to the server, so there is no CORS setup.
 
@@ -103,6 +103,7 @@ All accepted on 2026-09-30. Each one becomes a line in the WRITEUP.
 | Errors | 400 with Zod field errors for a bad body, query, or id format; 404 for a well-formed id that does not exist. Body: `{ error: { message, details? } }`. | Per CONVENTIONS; field errors map straight onto form fields. | Accepted |
 | Editing in the UI | The brief's list only needs delete. If time allows, Edit loads a row into the same form and saves with PUT. | Puts PUT to use for little code, and it is the first UI feature to cut if time runs short. | Accepted |
 | Shared types | A small `shared` workspace package (`@budget/shared`) holds the Zod schemas and the types inferred from them. `client` and `server` depend on it with `workspace:*`; it ships as TypeScript source, so there is no build step. | One source of truth: the form validates with the exact rules the server enforces, and a contract change fails both typechecks at once. Alt: mirror types in `client/src/types.ts`, the CONVENTIONS default, and accept drift risk. | Accepted |
+| Client server state | TanStack Query behind one `useTransactions(filters)` hook: query keys `['transactions', filters]`, `['summary', filters]`, and `['categories']`; every create, update, or delete invalidates all three; `placeholderData: keepPreviousData` keeps rows visible while filters change. | React's docs recommend a client cache over fetching in effects, and it removes the riskiest hand-written parts of Phase 4 (stale replies, refetch after changes). Alt: a hand-rolled `useEffect` hook, which CONVENTIONS also allows. | Accepted |
 | Runtime and install | Latest dependencies: every package added at `@latest` with the lockfile committed; as of 2026-09-30 that means Vite 8, React 19, Tailwind 4, Express 5, Zod 4, Vitest 5, and TypeScript 7. Runtime: Node 22 LTS in `.nvmrc`, matching the `engines` floor (`>=22.12`); newer Node releases also work. The newest pnpm is pinned via `packageManager`, and flagged build scripts are approved in `pnpm-workspace.yaml`. | The brief's README is only a template. Latest packages show current practice and the lockfile keeps installs repeatable. Node is the one thing a reviewer installs, so it stays on the LTS floor every tool supports. The Vite template still pins TypeScript 6.0; bump it, and fall back only if something breaks, noting it in the WRITEUP. | Accepted (revised after review) |
 
 ## Phase 1: Scaffold the monorepo (about 25 min)
@@ -125,7 +126,7 @@ Both apps start from one root command, and the page reaches the server through t
 
 - `package.json` (root, private): `dev` runs `pnpm -r --parallel run dev`; `test` and `typecheck` run across packages; `engines.node` is `>=22.12`; `packageManager` pins pnpm.
 - `pnpm-workspace.yaml`: the three packages, a `catalog` entry so every package uses one Zod version, and `allowBuilds` for any dependency pnpm flags (esbuild, which tsx uses, is the likely one).
-- `.gitignore`: already committed; it covers node_modules, dist, `.env`, `data/`, and .DS_Store. Add `docs/BRIEF.pdf` if the repo will be public. `.nvmrc`: 22.
+- `.gitignore`: already committed; it covers node_modules, dist, `.env`, `data/` (so `server/data/`), `docs/BRIEF.pdf`, and .DS_Store. `.nvmrc`: 22.
 - `shared/package.json`: `"name": "@budget/shared"`, `"type": "module"`, `exports` pointing at `./src/index.ts`, `zod` from the catalog, and `test` and `typecheck` scripts.
 - `shared/tsconfig.json`: `strict`, ESM, `moduleResolution: "Bundler"`, `noEmit`.
 - `shared/src/index.ts`: re-exports schemas and types; it starts with one placeholder type to prove both apps can import it.
@@ -134,7 +135,7 @@ Both apps start from one root command, and the page reaches the server through t
 - `server/src/app.ts`: `createApp()` with `express.json()`, `GET /api/health`, and stub JSON 404 and error handlers.
 - `server/src/index.ts`: reads `PORT` (default 3001) and listens.
 - `server/src/app.test.ts`: the health smoke test through Supertest.
-- `server/.env.example`: `PORT` and `DATA_FILE` now, any enhancement key later. Every value has a default.
+- `server/.env.example`: `PORT` and `DATA_FILE` (default `./data/transactions.json`, resolved from the server package) now; the AI key later. Every value has a default.
 - `client/package.json`: `@budget/shared` as `workspace:*`.
 - `client/tsconfig.app.json`: add `strict: true`, which the template leaves out, per CONVENTIONS.
 - `client/vite.config.ts`: React and Tailwind plugins, `/api` proxy.
@@ -187,6 +188,7 @@ The model keeps the brief's six fields unchanged. Ordering uses insertion order 
 - Synchronous `fs` writes are fine for one user and a tiny file. Read the data file with `fs` rather than `import`, so writes do not restart `tsx watch`.
 - A corrupt data file stops startup with a clear message instead of being overwritten.
 - Timebox the schema edge cases to the list above. If one fights back (for example the `2026-02-30` refine), skip it, note it here, and move on.
+- `DATA_FILE` defaults to `server/data/transactions.json`. Resolve it from the server package directory (for example with `import.meta.url`), not the process working directory, so it lands in the same place whether the server starts from the repo root or from `server/`. The `data/` rule in `.gitignore` covers it; a custom `DATA_FILE` outside a `data/` folder is not ignored.
 - Future dates: `shared/src/schemas.ts` exports a small refine that rejects dates after a given day, and `createApp` applies it when `ALLOW_FUTURE_DATES` is false. The flag defaults to `true`, is read in `index.ts`, and is listed in `server/.env.example`. Today means the server's local date.
 
 **Done when**
@@ -273,7 +275,7 @@ One page shows the summary, add form, filters, and list, all fed by one data hoo
 ```mermaid
 flowchart TD
     App["App: owns filters (useState), renders the four panels"]
-    Hook["useTransactions(filters): list, summary, categories; aborts stale calls; refetches after every change"]
+    Hook["useTransactions(filters): TanStack Query for list, summary, categories; invalidates all three after a change"]
     Api["api.ts: typed fetch helpers, /api via the Vite proxy"]
     Summary["SummaryPanel: all-time totals"]
     Form["TransactionForm: owns its field state, submits via create()"]
@@ -289,20 +291,20 @@ flowchart TD
 **Packages** (chosen at the start of this phase; Tailwind and the shared package are set up in Phase 1)
 
 - From the Phase 1 scaffold: react, react-dom, the template's dev tooling (Vite, the React plugin, TypeScript, oxlint), `tailwindcss`, `@tailwindcss/vite`, and `@budget/shared`.
-- Added here: `zod` from the catalog, for form error helpers; the rules themselves come from `@budget/shared`.
+- Added here: `@tanstack/react-query` for server state, and `zod` from the catalog for form error helpers (the rules themselves come from `@budget/shared`).
 - Likely: `sonner` for add, delete, and error toasts in place of a hand-rolled live region (check that screen readers announce them); `vitest` for the client helper tests.
-- Optional: `@tanstack/react-query` instead of the custom hook; `lucide-react` for the search and filter icons (icon-only buttons still need `aria-label`); `react-error-boundary` for one page-level fallback; `clsx` and `tailwind-merge` only if a `cn()` helper earns its place.
+- Optional: `@tanstack/react-query-devtools` while developing; `lucide-react` for the search and filter icons (icon-only buttons still need `aria-label`); `react-error-boundary` for one page-level fallback; `clsx` and `tailwind-merge` only if a `cn()` helper earns its place.
 - Skip: `jotai` and `luxon`. Filters live in `App` and dates are plain `YYYY-MM-DD` strings, so neither pays for itself; revisit `luxon` only if the enhancement needs month math. CONVENTIONS already skips TanStack Router, neverthrow, MSW, Playwright, and a Biome plus oxlint pair, and rules out the React Compiler here. TanStack Form, t3-env, and Lefthook add little at this size.
 - Phase 5: none expected; the AI feature is server work plus a small UI hook.
 
 **Goals**
 
 - A typed API layer: one `request<T>()` helper parses JSON and throws an `ApiError` carrying status, message, and field errors.
-- One data hook owns server state: filtered list, summary, and categories. It sends the current filters to both the list and the summary, and aborts stale requests when they change. `create`, `update`, and `remove` call the API, then refetch list, summary, and categories.
+- One data hook owns server state through TanStack Query: `useQuery` for the filtered list, the summary (same filters), and categories; `useMutation` for create, update, and delete, each invalidating all three keys. The filters are part of every query key, so a late reply can never overwrite newer results, and `placeholderData: keepPreviousData` keeps rows on screen while filters change.
 - State sits where it is used: filters in `App`, shared by the filter bar and the hook; form fields inside the form, so typing there does not re-render the list. No `useMemo` or `useCallback` without a measured reason.
 - Accessibility: a visible `<label htmlFor>` on every input; errors under fields, tied with `aria-describedby` and `aria-invalid`; a real `<table>` with `<caption>` and `<th scope="col">`; `focus-visible` rings; income and expense shown by text and sign, not color alone; a polite live region announces adds and deletes.
 - Every state renders something useful: loading, empty ("No transactions yet"), no matches (with Clear filters), and server down (with Retry).
-- Leave one clean hook for the chosen AI feature: for example an `onDescriptionBlur` callback in the form for suggestions, or a way to fill the filter panel's draft for natural-language filters.
+- Leave the hook for AI category suggestions: an `onDescriptionBlur` callback in the form, and a category field that remembers whether the user has typed in it.
 
 **Build order** (this phase carries the most risk; the last items are the first to cut)
 
@@ -317,7 +319,8 @@ flowchart TD
 
 - `@budget/shared`: the client imports `Transaction`, `TransactionInput`, `TransactionQuery`, `Summary`, and `TransactionInputSchema` from it, so there is no `client/src/types.ts`.
 - `client/src/api.ts`: `listTransactions(filters, signal)`, `createTransaction`, `updateTransaction`, `deleteTransaction`, `getSummary(filters)`, `getCategories`. Filters become query params, and blank fields are left out.
-- `client/src/hooks/useTransactions.ts`: server state and mutations. TanStack Query is an acceptable swap if you already use it daily; CONVENTIONS allows either.
+- `client/src/main.tsx`: wraps the app in `QueryClientProvider`, with `retry: 1` so the server-down state shows quickly.
+- `client/src/hooks/useTransactions.ts`: `useQuery` and `useMutation` behind one hook, returning rows, summary, categories, status, and the three mutations.
 - `client/src/hooks/useDebouncedValue.ts`: about 300 ms, for search.
 - `client/src/components/SummaryPanel.tsx`: income, expenses, and balance in a `<dl>`, always all-time; a negative balance is labeled, not just red.
 - `client/src/components/TransactionForm.tsx`: controlled fields; date defaults to local today; amount is `type="number"` with `step="0.01"` and `min="0.01"`; type is a radio group in a `<fieldset>`; category uses `<datalist>`. Field errors come from client checks and from server 400 details. Submit is disabled while saving; on success the form resets and refocuses description.
@@ -334,41 +337,35 @@ flowchart TD
 **Done when**
 
 - [ ] Bad input shows field errors; a valid add appears in the list and updates the summary without a reload.
-- [ ] Delete updates list and summary; search and every panel filter send query params (check the Network tab), and Apply, Close, Clear all, and Escape behave as described. Filtered totals match the visible rows, and the panel stays all-time.
+- [ ] Delete updates list and summary; search, type, and category send query params (check the Network tab), and the panel's Apply, Close, Clear all, and Escape behave as described.
+- [ ] Unless cut (log any cut in the Progress log): the range inputs filter correctly, the filtered totals line matches the visible rows while the panel stays all-time, and Edit saves through PUT.
 - [ ] Loading, empty, no-match, and server-down states each render.
 - [ ] A keyboard-only pass works: tab order, visible focus, Enter submits, labels announced.
 - [ ] `pnpm typecheck` passes; commit.
-- [ ] Mid-phase check at about 2:00: if search, type, and category filters are not working yet, take cut items 2 to 4 now.
+- [ ] Mid-phase check at about 2:00: if search, type, and category filters are not working yet, take cut items 2 to 4 now, which drops build-order items 4 to 6.
 - [ ] Clock check: past about 2:30, take the cut list before Phase 5.
 
-## Phase 5: AI enhancement (about 45 min)
+## Phase 5: AI category suggestions (about 45 min)
 
-The enhancement is an AI feature; which one is picked before Phase 4 starts. The recommendation is AI category suggestions, history first with an LLM fallback, because it demos with no API key and keeps category data clean at the source.
+The enhancement is AI category suggestions: history first, with an optional LLM fallback. It demos with no API key and keeps category data clean at the source. It is tight for 45 minutes, so ship the history path first and the LLM path second.
 
-**Rules for any AI option**
+**Rules**
 
-- It works with no API key: a deterministic path (history, simple rules, or a template) gives a useful result, and the LLM only improves on it.
+- It works with no API key: suggestions come from history, and the LLM only covers descriptions history has never seen.
 - The key is optional and server-side only (`ANTHROPIC_API_KEY` in `server/.env`); the browser never calls the model.
-- One adapter, `server/src/llm.ts`, owns the provider call, the prompt, a timeout of about 3 seconds, and Zod validation of the reply, reusing the shared schemas where they fit.
-- Model output never overwrites what the user typed, and results are announced to screen readers.
-- The README says it plainly: "Optional key; without it, [the no-key behavior]."
+- One adapter, `server/src/llm.ts`, owns the provider call, the prompt, a timeout of about 3 seconds, and Zod validation of the reply.
+- A suggestion never overwrites what the user typed, and it is announced to screen readers.
+- The README says it plainly: "Optional key; without it, suggestions use history only."
 
-| Option | What the user gets | Without a key | Hook | Time |
-| --- | --- | --- | --- | --- |
-| **AI category suggestions** (recommended) | A category filled in from the description | Suggestions from history (repeat descriptions) | Form: description blur | 45 to 60 min |
-| Natural-language filters | "food over $50 last month" fills the filter panel | Plain search on the text | Filter panel draft | 45 to 60 min |
-| Smart paste | Paste a bank line or note; the form is pre-filled for review | A small parser for amount and date | Form: a paste box | 45 to 60 min |
-| AI spending summary | Two or three sentences on this month vs last, from computed numbers | A template sentence from the same numbers | A panel under the summary | 40 to 50 min |
-
-All four are tight for a 45-minute slot, so the no-key path ships first and the LLM path second. Non-AI ideas considered earlier (spending charts, CSV import, budgets, inline edit, recurring) are out; they can go in the WRITEUP's next steps.
-
-**Why the recommendation**
+**Why this feature**
 
 - Categories drive every total and filter, and free-text entry drifts ("Food", "food", "Groceries"). Suggesting at entry keeps the data clean at the source.
 - History first makes repeat descriptions instant, free, private, and keyless, so a reviewer sees it work on a cold start. The LLM only sees descriptions it has never seen before.
 - It shows judgment about AI inside a product: validated model output, a timeout, a graceful fallback, and never overwriting what the user typed.
 
-**Scope if AI category suggestions is picked** (for another option, rewrite this block and the next two, and log the change)
+Also considered: natural-language filters, smart paste, and an AI spending summary. They make good WRITEUP next steps.
+
+**Scope**
 
 - `POST /api/categories/suggest` takes `{ description, type }` and returns `{ category, source }`, where `source` is `history`, `ai`, or `none`.
 - History first: the most recent transaction with the same description (after lowercase and trim) supplies the category.
@@ -411,7 +408,7 @@ A reviewer goes from clone to running app by following the README word for word,
 - Test: `pnpm test` and `pnpm typecheck`.
 - Environment variables: a table mirroring `server/.env.example`, marking each one required or optional.
 - API: the five brief endpoints plus every extension: `GET /api/categories`, the extra query params (`minAmount`, `maxAmount`, `startDate`, `endDate`), the summary's `filteredTotals` shape, and the AI endpoint, with two `curl` examples.
-- AI feature: "Optional key; without it, [the no-key behavior]", plus the env var to set.
+- AI suggestions: "Optional key; without it, suggestions use history only", plus the env var to set.
 - Notes: a one-line pointer to how the brief was interpreted (the WRITEUP and the Decisions in `docs/PLAN.md`), the persistence choice and how to reset data, the seed data, and known limits.
 
 **WRITEUP** (aim for about 500 words)
@@ -444,7 +441,7 @@ Test the logic that can fail silently (validation, filtering, money math, status
 | Shared schemas | Vitest | Valid input passes trimmed; each rule rejects; query blanks, bad values, and inverted ranges | 10 |
 | Store | Vitest | CRUD, each filter and the combination, order, cents-exact summary, JSON round trip | 12 |
 | Routes | Vitest and Supertest | Happy path plus the main 400 and 404 per endpoint; malformed JSON; one error shape | 14 |
-| AI enhancement | Vitest | The no-key path, the stubbed-model path, junk output, plus one route test | 4 to 6 |
+| AI suggestions | Vitest | History match with no key, stubbed model, junk output, plus one route test | 4 to 6 |
 | Client helpers (optional) | Vitest | Form parsing, date and currency formatting | 4 |
 | UI | By hand | The Phase 4 checklist, including a keyboard-only pass | checklist |
 
@@ -466,7 +463,7 @@ Most lost time on this stack comes from a few known traps. Several are also wher
 - Money: sum in integer cents, or 0.1 + 0.2 shows up as 0.30000000000000004.
 - Number inputs hand back strings and accept `e` and `-`. Parse and validate before sending.
 - Query values arrive as strings, and `z.coerce.number()` turns an empty one into 0. Map blanks to undefined before coercing `minAmount` and `maxAmount`.
-- Stale results: fast typing in search can land an older response last. Abort the previous request.
+- Stale results: fast typing in search can land an older response last. Keep every filter in the TanStack Query key so each reply lands in its own cache entry, and debounce search before it reaches the key.
 - Zod 4 changed APIs (for example `z.iso.date()` and `z.flattenError()`), and assistants often write Zod 3 style. Pin the major and check what they produce.
 - One Zod copy: the catalog entry keeps `shared`, `server`, and `client` on the same version; two copies break `instanceof` checks.
 - Tailwind v4 needs no `tailwind.config.js`, yet assistants often scaffold the v3 setup.
@@ -483,17 +480,18 @@ Most lost time on this stack comes from a few known traps. Several are also wher
 4. The filtered totals line above the list; the endpoint still returns `filteredTotals`.
 5. `GET /api/categories`; fall back to presets plus names from the loaded rows.
 6. JSON persistence; fall back to memory only and say so in the README.
-7. The AI feature's LLM path; ship the no-key path (for example history-only suggestions) and describe the LLM path as a next step.
+7. The LLM path of the suggestions; ship history-only suggestions and describe the LLM path as a next step.
 
 Never cut: server validation, error and empty states, labels and keyboard access, the README cold start, or the WRITEUP.
 
 ## Progress log
 
-Newest first. One line per work session: date, who, what changed, commit.
+Newest first. One line per work session: date, who, what changed, commit (write `pending` until committed, then replace it with the hash on the next edit).
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
-| 2026-09-30 | Claude (Cowork) with Carlos | Applied the plan review: Node 22 LTS in `.nvmrc`; the enhancement is an AI feature, picked before Phase 4; Phase 1 and 6 checklists; Phase 4 build order; cut list reordered; brief kept out of git. | not yet committed |
+| 2026-09-30 | Claude (Cowork) with Carlos | Locked AI category suggestions; TanStack Query for client server state; Phase 4 done list allows logged cuts; Phase 2 gated on the CONVENTIONS sync; `DATA_FILE` resolution noted; `docs/BRIEF.pdf` gitignored. | pending |
+| 2026-09-30 | Claude (Cowork) with Carlos | Applied the plan review: Node 22 LTS in `.nvmrc`; the enhancement is an AI feature, picked before Phase 4; Phase 1 and 6 checklists; Phase 4 build order; cut list reordered; brief kept out of git. | d047c38 |
 | 2026-09-30 | Claude (Cowork) with Carlos | Plan drafted and reviewed; all 13 decisions accepted; saved as `docs/PLAN.md`. | fec7308 |
 
 ## Sources

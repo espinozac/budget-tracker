@@ -59,3 +59,6 @@ Thumbs.db
 .stylelintcache
 *.pem
 .cache/
+
+# Take-home brief (kept out of git; local copy for agents)
+docs/BRIEF.pdf
