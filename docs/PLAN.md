@@ -490,7 +490,7 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
-| 2026-09-30 | Claude (Cowork) with Carlos | Locked AI category suggestions; TanStack Query for client server state; Phase 4 done list allows logged cuts; Phase 2 gated on the CONVENTIONS sync; `DATA_FILE` resolution noted; `docs/BRIEF.pdf` gitignored. | pending |
+| 2026-09-30 | Claude (Cowork) with Carlos | Locked AI category suggestions; TanStack Query for client server state; Phase 4 done list allows logged cuts; Phase 2 gated on the CONVENTIONS sync; `DATA_FILE` resolution noted; `docs/BRIEF.pdf` gitignored. | 2ce707b |
 | 2026-09-30 | Claude (Cowork) with Carlos | Applied the plan review: Node 22 LTS in `.nvmrc`; the enhancement is an AI feature, picked before Phase 4; Phase 1 and 6 checklists; Phase 4 build order; cut list reordered; brief kept out of git. | d047c38 |
 | 2026-09-30 | Claude (Cowork) with Carlos | Plan drafted and reviewed; all 13 decisions accepted; saved as `docs/PLAN.md`. | fec7308 |
 
