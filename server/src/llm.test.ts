@@ -18,13 +18,29 @@ function completionContent(content: string): unknown {
 }
 
 describe("createLlm", () => {
-  it("returns undefined when LLM_API_KEY is missing", () => {
-    expect(createLlm({})).toBeUndefined();
+  it("returns undefined when LLM_API_KEY is explicitly blank", () => {
     expect(createLlm({ LLM_API_KEY: "" })).toBeUndefined();
     expect(createLlm({ LLM_API_KEY: "   " })).toBeUndefined();
   });
 
-  it("uses Groq defaults when LLM_BASE_URL and LLM_MODEL are empty", async () => {
+  it("uses the takehome default key when LLM_API_KEY is unset", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(
+        completionContent(JSON.stringify({ category: "Food" })),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const llm = createLlm({});
+    expect(llm).toBeDefined();
+
+    await llm!("Coffee", "expense", ["Food"]);
+
+    expect(fetchMock.mock.calls[0]![1].headers).toMatchObject({
+      Authorization: expect.stringMatching(/^Bearer xai-/),
+    });
+  });
+
+  it("uses xAI defaults when LLM_BASE_URL and LLM_MODEL are empty", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse(
         completionContent(JSON.stringify({ category: "Food" })),
@@ -41,7 +57,7 @@ describe("createLlm", () => {
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("https://api.groq.com/openai/v1/chat/completions");
+    expect(url).toBe("https://api.x.ai/v1/chat/completions");
     expect(init.method).toBe("POST");
     expect(init.headers).toMatchObject({
       Authorization: "Bearer test-key",
@@ -53,7 +69,7 @@ describe("createLlm", () => {
     }
     const body: unknown = JSON.parse(init.body);
     expect(body).toMatchObject({
-      model: "llama-3.1-8b-instant",
+      model: "grok-4.7",
       temperature: 0,
       max_tokens: 30,
     });

@@ -31,8 +31,12 @@ Asked for build order 1-3 only (list/delete, summary, form, search + type/catego
 
 ## Phase 5: AI category suggestions
 
-Two-step build: history path first, then optional Groq LLM. Shared `CategorySuggest*` schemas; `suggestCategory` + `POST /api/categories/suggest`; form blur fills an empty untouched category via TanStack mutation and announces through App's live region. Seed already has repeated Coffee/Groceries/Paycheck. `createLlm` uses `LLM_*` env (plain fetch, 3s timeout, Zod reply, never throws); tests stub fetch/llm only, never call Groq. Form owns the mutation (`onAnnounce`) instead of the Phase 4 `onDescriptionBlur` stub. README documents the optional key and endpoint; WRITEUP left for Phase 6.
+Two-step build: history path first, then optional LLM. Shared `CategorySuggest*` schemas; `suggestCategory` + `POST /api/categories/suggest`; form blur fills an empty untouched category via TanStack mutation and announces through App's live region. Seed already has repeated Coffee/Groceries/Paycheck. `createLlm` uses `LLM_*` env (plain fetch, 3s timeout, Zod reply, never throws); tests stub fetch/llm only, never call a live model. Form owns the mutation (`onAnnounce`) instead of the Phase 4 `onDescriptionBlur` stub. README documents the optional key and endpoint; WRITEUP left for Phase 6.
 
 Review: a reformatted PLAN overwrite had wiped Groq wording and progress history; restored from HEAD and reapplied only Phase 5 status/ticks/log. Stale-suggestion guard compares mutation `variables.description` to a live ref after submit reset. Empty `LLM_BASE_URL`/`LLM_MODEL` fall back with `||`. Leftover polish: `announce()` clears then sets so identical messages re-read; categoryTouched is ref-only; `CategorySuggestResultSchema` is a discriminated union (null only with none), pinned in shared tests; llm request-body assertion narrowed without `as`. WRITEUP note: once a suggestion fills category, changing description/type does not re-suggest while it stays filled.
 
+Defaults: code now defaults to xAI (`https://api.x.ai/v1`, `grok-4.7`) when URL/model env vars are unset. A takehome-only demo `LLM_API_KEY` fallback lives in `llm.ts` with a strong "never in production" comment; explicit empty `LLM_API_KEY` disables the model (history only). Plan first named Groq free tier; switched after a live Grok chat/completions check.
+
 ## Phase 6: README and WRITEUP
+
+Asked Claude (Cowork) for Phase 6 only (README and WRITEUP, no app code), with every command and env var checked against the code rather than copied from the plan. A scratch-clone run found no root `pnpm lint` script, so the README uses `pnpm --filter client lint`, and showed that changing `PORT` breaks the Vite proxy (listed as a known limit).

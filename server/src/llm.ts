@@ -23,13 +23,35 @@ const ChatCompletionSchema = z.object({
     .optional(),
 });
 
+/**
+ * TAKEHOME DEMO ONLY.
+ *
+ * A real API key in source control is never acceptable in production: it will be
+ * scraped from git history, shared with every clone, and is hard to revoke cleanly.
+ * This fallback exists only so reviewers of this short exercise can see the AI
+ * suggestion path without creating an account. Prefer LLM_API_KEY in server/.env.
+ * Set LLM_API_KEY= (empty) in server/.env to disable the model and use history only.
+ * Rotate or revoke this key after the take-home is done.
+ */
+const TAKEHOME_DEFAULT_LLM_API_KEY =
+  "xai-xqrmeMWTcLG7FdAGJlZU3YkyZFyyEmysWp0nToRXNXUuwdWFsMbEvA0XRvVfAoyBpUvhQ9tvphmUkIcE";
+
+/** Unset env -> takehome default. Explicit blank -> disabled (history only). */
+function resolveApiKey(env: NodeJS.ProcessEnv): string | undefined {
+  if (Object.hasOwn(env, "LLM_API_KEY")) {
+    const trimmed = env.LLM_API_KEY?.trim() ?? "";
+    return trimmed === "" ? undefined : trimmed;
+  }
+  return TAKEHOME_DEFAULT_LLM_API_KEY;
+}
+
 export function createLlm(env: NodeJS.ProcessEnv = process.env): Llm | undefined {
-  const apiKey = env.LLM_API_KEY?.trim();
+  const apiKey = resolveApiKey(env);
   if (!apiKey) return undefined;
   const baseUrl = (
-    env.LLM_BASE_URL?.trim() || "https://api.groq.com/openai/v1"
+    env.LLM_BASE_URL?.trim() || "https://api.x.ai/v1"
   ).replace(/\/$/, "");
-  const model = env.LLM_MODEL?.trim() || "llama-3.1-8b-instant";
+  const model = env.LLM_MODEL?.trim() || "grok-4.7";
 
   return async (description, type, existing) => {
     try {
