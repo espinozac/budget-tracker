@@ -128,3 +128,29 @@ export const ApiErrorBodySchema = z.object({
     details: z.unknown().optional(),
   }),
 });
+
+export const CategorySuggestInputSchema = z.object({
+  description: z
+    .string()
+    .trim()
+    .min(1, "Enter a description")
+    .max(200, "Description must be 200 characters or fewer"),
+  type: TransactionTypeSchema,
+});
+
+export const CategorySuggestSourceSchema = z.enum(["history", "ai", "none"]);
+
+export const CategorySuggestResultSchema = z.discriminatedUnion("source", [
+  z.object({
+    category: z.string().min(1),
+    source: z.literal("history"),
+  }),
+  z.object({
+    category: z.string().min(1),
+    source: z.literal("ai"),
+  }),
+  z.object({
+    category: z.null(),
+    source: z.literal("none"),
+  }),
+]);

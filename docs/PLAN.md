@@ -26,7 +26,7 @@ Read this section before doing anything else.
 | 2. Domain model, schemas, and store | 30 min | Done (2026-09-30) | CONVENTIONS synced in Phase 1 |
 | 3. REST endpoints | 30 min | Done (2026-10-01) | |
 | 4. React UI | 65 min | Done (2026-10-01) | Full build order 1-6; review + R1-R5 polish |
-| 5. AI enhancement | 45 min | Not started | AI category suggestions |
+| 5. AI enhancement | 45 min | Done (2026-10-01) | History + optional Groq; manual cold-start/a11y/live-key left open |
 | 6. README and WRITEUP | 25 min | Not started | |
 
 ## Open questions
@@ -391,10 +391,10 @@ Also considered: natural-language filters, smart paste, and an AI spending summa
 
 - [ ] With no key set, the feature still demos on a cold start (the seed data gives it history to use).
 - [ ] With a free Groq key set, the LLM path works, times out cleanly, and falls back to `none` on a 429.
-- [ ] The core logic is a small unit-tested function, and one route test covers the endpoint.
+- [x] The core logic is a small unit-tested function, and one route test covers the endpoint.
 - [ ] Usable by keyboard and screen reader, with async results announced.
 - [ ] README states the optional key and the no-key behavior; WRITEUP covers why, the value, and the trade-offs; the new endpoint is documented.
-- [ ] Commit.
+- [x] Commit.
 
 ## Phase 6: README and WRITEUP (about 25 min)
 
@@ -490,6 +490,7 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
+| 2026-10-01 | Cursor | Phase 5: history-first category suggestions + optional Groq LLM (`createLlm`, POST /api/categories/suggest, form blur). Review fixes: restore PLAN from HEAD, stale-suggestion guard, llm test gaps, empty LLM_* defaults. Leftover polish: announce re-read, categoryTouched ref-only, discriminated CategorySuggestResultSchema + shared tests, no as cast in llm.test. | pending |
 | 2026-10-01 | Claude (Cowork) with Carlos | Phase 5 LLM: Groq free tier via OpenAI-compatible fetch (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`) instead of Anthropic. | fc93113 |
 | 2026-10-01 | Cursor | Phase 4 polish R1-R5: focus first invalid filter field; visible delete failure alert; focusOnMount only after Edit/Cancel/Save; Net balance back in summary dl; show 4xx message above list. | 8c565ee |
 | 2026-10-01 | Cursor | Phase 4 review fixes: B1 range validation + no full-page on 4xx + retry skip 4xx; S1 delete catch; S2 emerald-700; S3 form key remount; S4 friendly Zod messages; S5 untick commit; N2/N3/N5/N6/N7/N9 cleanup. N1 Clear all stays draft-only (user request; note in WRITEUP). N4 single table and N10 client unit tests not done (cut item 1). N8 left for Phase 5. | 8c565ee |

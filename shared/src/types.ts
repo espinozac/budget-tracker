@@ -1,6 +1,9 @@
 import type { z } from "zod";
 import {
   ApiErrorBodySchema,
+  CategorySuggestInputSchema,
+  CategorySuggestResultSchema,
+  CategorySuggestSourceSchema,
   SummarySchema,
   TotalsSchema,
   TransactionInputSchema,
@@ -16,3 +19,6 @@ export type TransactionQuery = z.infer<typeof TransactionQuerySchema>;
 export type Totals = z.infer<typeof TotalsSchema>;
 export type Summary = z.infer<typeof SummarySchema>;
 export type ApiErrorBody = z.infer<typeof ApiErrorBodySchema>;
+export type CategorySuggestInput = z.infer<typeof CategorySuggestInputSchema>;
+export type CategorySuggestSource = z.infer<typeof CategorySuggestSourceSchema>;
+export type CategorySuggestResult = z.infer<typeof CategorySuggestResultSchema>;

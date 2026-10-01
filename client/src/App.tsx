@@ -96,6 +96,12 @@ export function App() {
   const [listAlert, setListAlert] = useState<string | null>(null);
   const debouncedSearch = useDebouncedValue(filters.search, 300);
 
+  /** Clear first so aria-live re-announces an identical follow-up message. */
+  function announce(message: string) {
+    setAnnouncement("");
+    queueMicrotask(() => setAnnouncement(message));
+  }
+
   const queryFilters = toQuery({
     ...filters,
     search: debouncedSearch,
@@ -132,13 +138,13 @@ export function App() {
     clearListAlert();
     if (editing !== null) {
       const saved = await update({ id: editing.id, input });
-      setAnnouncement(`Updated ${saved.description}`);
+      announce(`Updated ${saved.description}`);
       setEditing(null);
       setFocusForm(true);
       return;
     }
     const created = await create(input);
-    setAnnouncement(`Added ${created.description}`);
+    announce(`Added ${created.description}`);
   }
 
   async function handleDelete(tx: Transaction) {
@@ -156,11 +162,11 @@ export function App() {
     try {
       await remove(tx.id);
       const message = `Deleted ${tx.description}`;
-      setAnnouncement(message);
+      announce(message);
       setListAlert(null);
     } catch {
       const message = `Could not delete ${tx.description}`;
-      setAnnouncement(message);
+      announce(message);
       setListAlert(message);
     }
   }
@@ -245,9 +251,7 @@ export function App() {
                 setFocusForm(true);
               }}
               isSubmitting={isCreating || isUpdating}
-              onDescriptionBlur={() => {
-                // Phase 5: AI category suggestions hook.
-              }}
+              onAnnounce={announce}
             />
 
             <div className="space-y-4">

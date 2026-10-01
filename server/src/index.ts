@@ -1,4 +1,5 @@
 import { createApp } from "./app";
+import { createLlm } from "./llm";
 import { loadEnv, resolveDataFile } from "./schemas";
 import { buildSeedTransactions } from "./seed";
 import { createStore } from "./store";
@@ -9,7 +10,10 @@ const store = createStore({
   filePath,
   seed: buildSeedTransactions(),
 });
-const app = createApp(store, { allowFutureDates: env.ALLOW_FUTURE_DATES });
+const app = createApp(store, {
+  allowFutureDates: env.ALLOW_FUTURE_DATES,
+  llm: createLlm(),
+});
 
 app.listen(env.PORT, () => {
   console.log(`Server listening on http://localhost:${env.PORT}`);

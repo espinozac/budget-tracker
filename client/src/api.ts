@@ -1,5 +1,7 @@
 import type {
   ApiErrorBody,
+  CategorySuggestInput,
+  CategorySuggestResult,
   Summary,
   Transaction,
   TransactionInput,
@@ -152,4 +154,13 @@ export function getSummary(
 
 export function getCategories(signal?: AbortSignal): Promise<string[]> {
   return request<string[]>("/api/categories", { signal });
+}
+
+export function suggestCategory(
+  input: CategorySuggestInput,
+): Promise<CategorySuggestResult> {
+  return request<CategorySuggestResult>("/api/categories/suggest", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }

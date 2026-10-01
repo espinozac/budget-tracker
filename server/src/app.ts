@@ -9,10 +9,12 @@ import { HttpError } from "./http";
 import { categoriesRouter } from "./routes/categories";
 import { summaryRouter } from "./routes/summary";
 import { transactionsRouter } from "./routes/transactions";
+import type { Llm } from "./llm";
 import type { Store } from "./store";
 
 export type CreateAppOptions = {
   allowFutureDates?: boolean;
+  llm?: Llm;
 };
 
 function isMalformedJson(err: unknown): boolean {
@@ -58,7 +60,7 @@ export function createApp(
     transactionsRouter(store, { allowFutureDates }),
   );
   app.use("/api/summary", summaryRouter(store));
-  app.use("/api/categories", categoriesRouter(store));
+  app.use("/api/categories", categoriesRouter(store, { llm: options.llm }));
 
   app.use((_req, res) => {
     res.status(404).json({

@@ -1,5 +1,8 @@
 export {
   ApiErrorBodySchema,
+  CategorySuggestInputSchema,
+  CategorySuggestResultSchema,
+  CategorySuggestSourceSchema,
   SummarySchema,
   TotalsSchema,
   TransactionInputSchema,
@@ -11,6 +14,9 @@ export {
 
 export type {
   ApiErrorBody,
+  CategorySuggestInput,
+  CategorySuggestResult,
+  CategorySuggestSource,
   Summary,
   Totals,
   Transaction,

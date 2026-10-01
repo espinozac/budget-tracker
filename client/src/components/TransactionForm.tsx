@@ -1,10 +1,11 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useMutation } from "@tanstack/react-query";
 import type {
+  CategorySuggestSource,
   Transaction,
   TransactionInput,
-  TransactionType,
 } from "@budget/shared";
-import { ApiError } from "../api";
+import { ApiError, suggestCategory } from "../api";
 import { todayLocal } from "../lib/format";
 import {
   mapServerFieldErrors,
@@ -34,11 +35,8 @@ type TransactionFormProps = {
   onSubmit: (input: TransactionInput) => Promise<void>;
   onCancelEdit: () => void;
   isSubmitting: boolean;
-  /** Phase 5 hook: called when description blurs. */
-  onDescriptionBlur?: (
-    description: string,
-    type: TransactionType,
-  ) => void;
+  /** Announce async suggestion results in the page live region. */
+  onAnnounce?: (message: string) => void;
 };
 
 function emptyForm(): FormValues {
@@ -61,6 +59,16 @@ function valuesFromTransaction(tx: Transaction): FormValues {
   };
 }
 
+function suggestionLabel(source: CategorySuggestSource): string | null {
+  if (source === "history") {
+    return "Suggested from your history";
+  }
+  if (source === "ai") {
+    return "Suggested by AI";
+  }
+  return null;
+}
+
 /** Controlled add/edit form. Category tracks whether the user has typed in it.
  * Remount via key={editing?.id ?? "new"} so initial state comes from props.
  */
@@ -71,18 +79,56 @@ export function TransactionForm({
   onSubmit,
   onCancelEdit,
   isSubmitting,
-  onDescriptionBlur,
+  onAnnounce,
 }: TransactionFormProps) {
   const formId = useId();
   const descriptionRef = useRef<HTMLInputElement>(null);
+  const categoryTouchedRef = useRef(editing !== null);
+  const categoryValueRef = useRef(
+    editing !== null ? editing.category : "",
+  );
+  const descriptionValueRef = useRef(
+    editing !== null ? editing.description : "",
+  );
   const [values, setValues] = useState<FormValues>(() =>
     editing !== null ? valuesFromTransaction(editing) : emptyForm(),
   );
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [categoryTouched, setCategoryTouched] = useState(editing !== null);
+  const [suggestionSource, setSuggestionSource] =
+    useState<CategorySuggestSource | null>(null);
 
   const isEditing = editing !== null;
+
+  const suggestMutation = useMutation({
+    mutationFn: suggestCategory,
+    onSuccess: (result, variables) => {
+      if (result.source === "none") {
+        return;
+      }
+      // Ignore stale replies after the description changed or the form reset.
+      if (
+        variables.description.trim().toLowerCase() !==
+        descriptionValueRef.current.trim().toLowerCase()
+      ) {
+        return;
+      }
+      if (
+        categoryTouchedRef.current ||
+        categoryValueRef.current.trim() !== ""
+      ) {
+        return;
+      }
+      const suggested = result.category;
+      categoryValueRef.current = suggested;
+      setValues((prev) => ({ ...prev, category: suggested }));
+      setSuggestionSource(result.source);
+      const label = suggestionLabel(result.source);
+      if (label !== null) {
+        onAnnounce?.(`${label}: ${suggested}`);
+      }
+    },
+  });
 
   useEffect(() => {
     if (focusOnMount) {
@@ -106,6 +152,20 @@ export function TransactionForm({
     });
   }
 
+  function handleDescriptionBlur() {
+    if (categoryTouchedRef.current || categoryValueRef.current.trim() !== "") {
+      return;
+    }
+    const description = values.description.trim();
+    if (description === "") {
+      return;
+    }
+    suggestMutation.mutate({
+      description: values.description,
+      type: values.type,
+    });
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
@@ -121,7 +181,10 @@ export function TransactionForm({
       if (!isEditing) {
         setValues(emptyForm());
         setFieldErrors({});
-        setCategoryTouched(false);
+        categoryTouchedRef.current = false;
+        categoryValueRef.current = "";
+        descriptionValueRef.current = "";
+        setSuggestionSource(null);
         descriptionRef.current?.focus();
       }
     } catch (err) {
@@ -143,6 +206,16 @@ export function TransactionForm({
   function fieldInvalid(field: keyof FormValues): boolean {
     return (fieldErrors[field]?.length ?? 0) > 0;
   }
+
+  const suggestionHint = suggestionSource
+    ? suggestionLabel(suggestionSource)
+    : null;
+  const categoryDescribedBy = [
+    fieldInvalid("category") ? errorId("category") : null,
+    suggestionHint !== null ? `${formId}-category-suggestion` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <section
@@ -186,10 +259,11 @@ export function TransactionForm({
             type="text"
             autoComplete="off"
             value={values.description}
-            onChange={(e) => setField("description", e.target.value)}
-            onBlur={() => {
-              onDescriptionBlur?.(values.description, values.type);
+            onChange={(e) => {
+              descriptionValueRef.current = e.target.value;
+              setField("description", e.target.value);
             }}
+            onBlur={handleDescriptionBlur}
             aria-invalid={fieldInvalid("description")}
             aria-describedby={
               fieldInvalid("description")
@@ -319,14 +393,15 @@ export function TransactionForm({
             autoComplete="off"
             value={values.category}
             onChange={(e) => {
-              setCategoryTouched(true);
+              categoryTouchedRef.current = true;
+              categoryValueRef.current = e.target.value;
+              setSuggestionSource(null);
               setField("category", e.target.value);
             }}
             aria-invalid={fieldInvalid("category")}
             aria-describedby={
-              fieldInvalid("category") ? errorId("category") : undefined
+              categoryDescribedBy !== "" ? categoryDescribedBy : undefined
             }
-            data-category-touched={categoryTouched ? "true" : "false"}
             className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus-visible:border-navy-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-800"
           />
           <datalist id={`${formId}-category-list`}>
@@ -334,6 +409,14 @@ export function TransactionForm({
               <option key={name} value={name} />
             ))}
           </datalist>
+          {suggestionHint !== null ? (
+            <p
+              id={`${formId}-category-suggestion`}
+              className="mt-1 text-sm text-slate-600"
+            >
+              {suggestionHint}
+            </p>
+          ) : null}
           {fieldInvalid("category") ? (
             <p id={errorId("category")} className="mt-1 text-sm text-red-700">
               {fieldErrors.category?.[0]}

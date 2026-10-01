@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  CategorySuggestResultSchema,
   TransactionInputSchema,
   TransactionQuerySchema,
   withNoFutureDates,
@@ -183,5 +184,52 @@ describe("TransactionQuerySchema", () => {
       endDate: "2026-09-01",
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("CategorySuggestResultSchema", () => {
+  it("accepts history and ai with a category, and none with null", () => {
+    expect(
+      CategorySuggestResultSchema.safeParse({
+        category: "Food",
+        source: "history",
+      }).success,
+    ).toBe(true);
+    expect(
+      CategorySuggestResultSchema.safeParse({
+        category: "Transport",
+        source: "ai",
+      }).success,
+    ).toBe(true);
+    expect(
+      CategorySuggestResultSchema.safeParse({
+        category: null,
+        source: "none",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects null category paired with history or ai", () => {
+    expect(
+      CategorySuggestResultSchema.safeParse({
+        category: null,
+        source: "history",
+      }).success,
+    ).toBe(false);
+    expect(
+      CategorySuggestResultSchema.safeParse({
+        category: null,
+        source: "ai",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a non-null category paired with none", () => {
+    expect(
+      CategorySuggestResultSchema.safeParse({
+        category: "Food",
+        source: "none",
+      }).success,
+    ).toBe(false);
   });
 });
