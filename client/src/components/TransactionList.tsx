@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Totals, Transaction } from "@budget/shared";
 import {
   formatCurrency,
@@ -65,6 +66,8 @@ export function TransactionList({
   onDelete,
   isDeleting,
 }: TransactionListProps) {
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
   const totalsLine =
     hasFilters && filteredTotals !== undefined ? (
       <FilteredTotalsLine totals={filteredTotals} />
@@ -123,18 +126,12 @@ export function TransactionList({
             {formatDateLong(date)}
           </h3>
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-            <table className="w-full min-w-[40rem] border-collapse text-left">
+            <table className="w-full min-w-[36rem] border-collapse text-left">
               <caption className="sr-only">
                 Transactions on {formatDateLong(date)}
               </caption>
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600"
-                  >
-                    Description
-                  </th>
                   <th
                     scope="col"
                     className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600"
@@ -145,7 +142,7 @@ export function TransactionList({
                     scope="col"
                     className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600"
                   >
-                    Date
+                    Description
                   </th>
                   <th
                     scope="col"
@@ -182,15 +179,12 @@ export function TransactionList({
                             $
                           </span>
                           <span className="font-bold text-slate-900">
-                            {tx.description}
+                            {tx.category}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-slate-500">
-                        {tx.category}
-                      </td>
                       <td className="px-4 py-4 text-sm text-slate-700">
-                        {formatDate(tx.date)}
+                        {tx.description}
                       </td>
                       <td className="px-4 py-4 text-sm capitalize text-slate-700">
                         {tx.type}
@@ -206,25 +200,61 @@ export function TransactionList({
                         {signed}
                       </td>
                       <td className="px-4 py-4 text-right">
-                        <div className="flex flex-wrap items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => onEdit(tx)}
-                            aria-label={`Edit ${tx.description}, ${formatDate(tx.date)}`}
-                            className="rounded-md px-2 py-1 text-sm font-semibold text-navy-700 underline decoration-dotted underline-offset-4 hover:text-navy-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-800"
+                        {confirmingId === tx.id ? (
+                          <div
+                            role="group"
+                            aria-label={`Confirm delete ${tx.description}`}
+                            className="flex flex-wrap items-center justify-end gap-2"
                           >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isDeleting}
-                            onClick={() => onDelete(tx)}
-                            aria-label={`Delete ${tx.description}, ${formatDate(tx.date)}`}
-                            className="rounded-md px-2 py-1 text-sm font-semibold text-navy-700 underline decoration-dotted underline-offset-4 hover:text-navy-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-800 disabled:opacity-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                            <span className="text-sm text-slate-600">
+                              Delete?
+                            </span>
+                            <button
+                              type="button"
+                              disabled={isDeleting}
+                              onClick={() => {
+                                setConfirmingId(null);
+                                onDelete(tx);
+                              }}
+                              aria-label={`Confirm delete ${tx.description}, ${formatDate(tx.date)}`}
+                              className="rounded-md bg-red-700 px-2 py-1 text-sm font-semibold text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:opacity-50"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isDeleting}
+                              onClick={() => setConfirmingId(null)}
+                              aria-label={`Cancel delete ${tx.description}`}
+                              className="rounded-md px-2 py-1 text-sm font-semibold text-navy-700 underline decoration-dotted underline-offset-4 hover:text-navy-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-800 disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConfirmingId(null);
+                                onEdit(tx);
+                              }}
+                              aria-label={`Edit ${tx.description}, ${formatDate(tx.date)}`}
+                              className="rounded-md px-2 py-1 text-sm font-semibold text-navy-700 underline decoration-dotted underline-offset-4 hover:text-navy-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-800"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isDeleting}
+                              onClick={() => setConfirmingId(tx.id)}
+                              aria-label={`Delete ${tx.description}, ${formatDate(tx.date)}`}
+                              className="rounded-md px-2 py-1 text-sm font-semibold text-navy-700 underline decoration-dotted underline-offset-4 hover:text-navy-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-800 disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );

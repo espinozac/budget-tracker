@@ -30,10 +30,11 @@ type TransactionFormProps = {
   categories: string[];
   /** When set, the form edits this row and saves with PUT. */
   editing: Transaction | null;
-  /** Focus description on mount (after Edit, Cancel, or Save), not on first page load. */
+  /** Focus description on mount (after Edit or Add opens the form). */
   focusOnMount?: boolean;
   onSubmit: (input: TransactionInput) => Promise<void>;
-  onCancelEdit: () => void;
+  /** Dismiss add or edit and return focus to the Add button. */
+  onCancel: () => void;
   isSubmitting: boolean;
   /** Announce async suggestion results in the page live region. */
   onAnnounce?: (message: string) => void;
@@ -77,7 +78,7 @@ export function TransactionForm({
   editing,
   focusOnMount = false,
   onSubmit,
-  onCancelEdit,
+  onCancel,
   isSubmitting,
   onAnnounce,
 }: TransactionFormProps) {
@@ -178,15 +179,6 @@ export function TransactionForm({
 
     try {
       await onSubmit(parsed.data);
-      if (!isEditing) {
-        setValues(emptyForm());
-        setFieldErrors({});
-        categoryTouchedRef.current = false;
-        categoryValueRef.current = "";
-        descriptionValueRef.current = "";
-        setSuggestionSource(null);
-        descriptionRef.current?.focus();
-      }
     } catch (err) {
       if (err instanceof ApiError) {
         setFieldErrors(mapServerFieldErrors(err.fieldErrors));
@@ -436,16 +428,14 @@ export function TransactionForm({
                 ? "Save changes"
                 : "Add transaction"}
           </button>
-          {isEditing ? (
-            <button
-              type="button"
-              onClick={onCancelEdit}
-              disabled={isSubmitting}
-              className="rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-navy-800 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-800 disabled:opacity-60"
-            >
-              Cancel
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isSubmitting}
+            className="rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-navy-800 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-800 disabled:opacity-60"
+          >
+            Cancel
+          </button>
         </div>
       </form>
     </section>

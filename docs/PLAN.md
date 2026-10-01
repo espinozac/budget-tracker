@@ -325,10 +325,10 @@ flowchart TD
 - `client/src/components/SummaryPanel.tsx`: income, expenses, and balance in a `<dl>`, always all-time; a negative balance is labeled, not just red.
 - `client/src/components/TransactionForm.tsx`: controlled fields; date defaults to local today; amount is `type="number"` with `step="0.01"` and `min="0.01"`; type is a radio group in a `<fieldset>`; category uses `<datalist>`. Field errors come from client checks and from server 400 details. Submit is disabled while saving; on success the form resets and refocuses description.
 - `client/src/components/FilterBar.tsx`: the bank-style pattern. A labeled search input stays visible, and a Filters button (showing the active-filter count) opens a panel with type, category, amount from and to, and date from and to. The panel edits a local draft: Apply commits it to `App`, Close discards it, and Clear all resets every filter. The button carries `aria-expanded`, and Escape closes the panel and returns focus to it. Keep a visible search label; bank UIs often rely on a placeholder, which CONVENTIONS rules out.
-- `client/src/components/TransactionList.tsx`: the table, headed by a line showing `filteredTotals` when filters are active. Delete asks with `confirm()`, and its accessible name includes the row ("Delete Groceries, Sep 30"). Edit loads the row into the form, if kept.
+- `client/src/components/TransactionList.tsx`: the table, headed by a line showing `filteredTotals` when filters are active. Delete asks for inline Confirm/Cancel (not `window.confirm`, which embedded browsers often block), and its accessible name includes the row ("Delete Groceries, Sep 30"). Edit loads the row into the form, if kept.
 - `client/src/lib/format.ts`: `formatCurrency`, `formatDate` for `YYYY-MM-DD` without a timezone shift, and `todayLocal()`.
 - `client/src/lib/validation.ts`: converts form strings (numbers, trimmed text) and validates them with the shared `TransactionInputSchema`, mapping its field errors under each input.
-- `client/src/App.tsx`: header and summary, then the form beside filters and list on wide screens, stacked on narrow ones.
+- `client/src/App.tsx`: header and summary, then a collapsible add/edit form above the stacked filters and list (hidden until Add or Edit).
 
 **Tests (optional, only if ahead of the clock)**
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   Transaction,
   TransactionInput,
@@ -91,9 +91,13 @@ function panelFilters(filters: UiFilters): FilterDraft {
 export function App() {
   const [filters, setFilters] = useState<UiFilters>(emptyFilters);
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
   const [focusForm, setFocusForm] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [listAlert, setListAlert] = useState<string | null>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+  const formRegionRef = useRef<HTMLDivElement>(null);
+  const focusAddAfterCloseRef = useRef(false);
   const debouncedSearch = useDebouncedValue(filters.search, 300);
 
   /** Clear first so aria-live re-announces an identical follow-up message. */
@@ -101,6 +105,13 @@ export function App() {
     setAnnouncement("");
     queueMicrotask(() => setAnnouncement(message));
   }
+
+  useEffect(() => {
+    if (!formOpen && focusAddAfterCloseRef.current) {
+      focusAddAfterCloseRef.current = false;
+      addButtonRef.current?.focus();
+    }
+  }, [formOpen]);
 
   const queryFilters = toQuery({
     ...filters,
@@ -134,30 +145,50 @@ export function App() {
     setListAlert(null);
   }
 
+  function closeForm() {
+    focusAddAfterCloseRef.current = true;
+    setEditing(null);
+    setFormOpen(false);
+    setFocusForm(false);
+  }
+
+  function openAddForm() {
+    clearListAlert();
+    setEditing(null);
+    setFormOpen(true);
+    setFocusForm(true);
+  }
+
+  function openEditForm(tx: Transaction) {
+    clearListAlert();
+    setEditing(tx);
+    setFormOpen(true);
+    setFocusForm(true);
+    queueMicrotask(() => {
+      formRegionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
   async function handleSubmit(input: TransactionInput) {
     clearListAlert();
     if (editing !== null) {
       const saved = await update({ id: editing.id, input });
       announce(`Updated ${saved.description}`);
-      setEditing(null);
-      setFocusForm(true);
+      closeForm();
       return;
     }
     const created = await create(input);
     announce(`Added ${created.description}`);
+    closeForm();
   }
 
   async function handleDelete(tx: Transaction) {
     clearListAlert();
-    const ok = window.confirm(
-      `Delete "${tx.description}" from ${tx.date}?`,
-    );
-    if (!ok) {
-      return;
-    }
     if (editing?.id === tx.id) {
-      setEditing(null);
-      setFocusForm(true);
+      closeForm();
     }
     try {
       await remove(tx.id);
@@ -238,97 +269,103 @@ export function App() {
         <div className="space-y-6">
           <SummaryPanel summary={summary} isLoading={isLoading} />
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:items-start">
-            <TransactionForm
-              key={editing?.id ?? "new"}
-              categories={categories}
-              editing={editing}
-              focusOnMount={focusForm}
-              onSubmit={handleSubmit}
-              onCancelEdit={() => {
-                clearListAlert();
-                setEditing(null);
-                setFocusForm(true);
-              }}
-              isSubmitting={isCreating || isUpdating}
-              onAnnounce={announce}
-            />
-
-            <div className="space-y-4">
-              <section
-                aria-labelledby="history-heading"
-                className="rounded-lg border border-slate-200 bg-white px-4 py-4 sm:px-5"
-              >
-                <div className="mb-4 flex items-end justify-between gap-3 border-b border-slate-200 pb-3">
-                  <div>
-                    <h2
-                      id="history-heading"
-                      className="text-lg font-bold text-slate-900"
-                    >
-                      Transaction History
-                    </h2>
-                    <p className="mt-0.5 text-sm text-slate-500">
-                      Newest first. Search and filters update the list.
-                    </p>
-                  </div>
-                </div>
-
-                <FilterBar
-                  search={filters.search}
-                  onSearchChange={(search) => {
-                    clearListAlert();
-                    setFilters((prev) => ({ ...prev, search }));
-                  }}
-                  applied={panelFilters(filters)}
-                  categories={categories}
-                  onApply={(draft: FilterDraft) => {
-                    clearListAlert();
-                    setFilters((prev) => ({
-                      ...prev,
-                      type: draft.type,
-                      category: draft.category,
-                      minAmount: draft.minAmount,
-                      maxAmount: draft.maxAmount,
-                      startDate: draft.startDate,
-                      endDate: draft.endDate,
-                    }));
-                  }}
-                />
-              </section>
-
-              {listAlert !== null ? (
-                <p
-                  role="alert"
-                  className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-                >
-                  {listAlert}
-                </p>
-              ) : null}
-
-              {clientQueryError !== null ? (
-                <p
-                  role="alert"
-                  className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-                >
-                  {clientQueryError}
-                </p>
-              ) : null}
-
-              <TransactionList
-                transactions={transactions}
-                isLoading={isLoading}
-                hasFilters={filtersActive}
-                filteredTotals={summary?.filteredTotals}
-                onClearFilters={clearFilters}
-                onEdit={(tx) => {
+          <div ref={formRegionRef}>
+            {formOpen ? (
+              <TransactionForm
+                key={editing?.id ?? "new"}
+                categories={categories}
+                editing={editing}
+                focusOnMount={focusForm}
+                onSubmit={handleSubmit}
+                onCancel={() => {
                   clearListAlert();
-                  setFocusForm(true);
-                  setEditing(tx);
+                  closeForm();
                 }}
-                onDelete={handleDelete}
-                isDeleting={isDeleting}
+                isSubmitting={isCreating || isUpdating}
+                onAnnounce={announce}
               />
-            </div>
+            ) : (
+              <button
+                ref={addButtonRef}
+                type="button"
+                onClick={openAddForm}
+                className="rounded-md bg-accent px-5 py-2.5 text-sm font-bold text-white hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                Add transaction
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <section
+              aria-labelledby="history-heading"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-4 sm:px-5"
+            >
+              <div className="mb-4 flex items-end justify-between gap-3 border-b border-slate-200 pb-3">
+                <div>
+                  <h2
+                    id="history-heading"
+                    className="text-lg font-bold text-slate-900"
+                  >
+                    Transaction History
+                  </h2>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    Newest first. Search and filters update the list.
+                  </p>
+                </div>
+              </div>
+
+              <FilterBar
+                search={filters.search}
+                onSearchChange={(search) => {
+                  clearListAlert();
+                  setFilters((prev) => ({ ...prev, search }));
+                }}
+                applied={panelFilters(filters)}
+                categories={categories}
+                onApply={(draft: FilterDraft) => {
+                  clearListAlert();
+                  setFilters((prev) => ({
+                    ...prev,
+                    type: draft.type,
+                    category: draft.category,
+                    minAmount: draft.minAmount,
+                    maxAmount: draft.maxAmount,
+                    startDate: draft.startDate,
+                    endDate: draft.endDate,
+                  }));
+                }}
+              />
+            </section>
+
+            {listAlert !== null ? (
+              <p
+                role="alert"
+                className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+              >
+                {listAlert}
+              </p>
+            ) : null}
+
+            {clientQueryError !== null ? (
+              <p
+                role="alert"
+                className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+              >
+                {clientQueryError}
+              </p>
+            ) : null}
+
+            <TransactionList
+              transactions={transactions}
+              isLoading={isLoading}
+              hasFilters={filtersActive}
+              filteredTotals={summary?.filteredTotals}
+              onClearFilters={clearFilters}
+              onEdit={openEditForm}
+              onDelete={handleDelete}
+              isDeleting={isDeleting}
+            />
           </div>
         </div>
 

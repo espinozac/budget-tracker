@@ -45,19 +45,23 @@ function resolveApiKey(env: NodeJS.ProcessEnv): string | undefined {
   return TAKEHOME_DEFAULT_LLM_API_KEY;
 }
 
-export function createLlm(env: NodeJS.ProcessEnv = process.env): Llm | undefined {
+export function createLlm(
+  env: NodeJS.ProcessEnv = process.env,
+  options: { timeoutMs?: number } = {},
+): Llm | undefined {
   const apiKey = resolveApiKey(env);
   if (!apiKey) return undefined;
   const baseUrl = (
     env.LLM_BASE_URL?.trim() || "https://api.x.ai/v1"
   ).replace(/\/$/, "");
   const model = env.LLM_MODEL?.trim() || "grok-4.7";
+  const timeoutMs = options.timeoutMs ?? 3000;
 
   return async (description, type, existing) => {
     try {
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
-        signal: AbortSignal.timeout(3000),
+        signal: AbortSignal.timeout(timeoutMs),
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,

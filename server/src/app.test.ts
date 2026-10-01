@@ -6,9 +6,16 @@ import { createStore } from "./store";
 describe("GET /api/health", () => {
   it("returns { ok: true }", async () => {
     const app = createApp(createStore());
-    const res = await request(app).get("/api/health");
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true });
+    const server = app.listen(0);
+    try {
+      const res = await request(server).get("/api/health");
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ ok: true });
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        server.close((err) => (err ? reject(err) : resolve()));
+      });
+    }
   });
 });
 

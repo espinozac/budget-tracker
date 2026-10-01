@@ -140,11 +140,11 @@ describe("createLlm", () => {
           }),
       ),
     );
-    const llm = createLlm({ LLM_API_KEY: "test-key" });
+    const llm = createLlm({ LLM_API_KEY: "test-key" }, { timeoutMs: 20 });
 
     const result = await llm!("Uber", "expense", ["Food"]);
     expect(result).toBeNull();
-  }, 5000);
+  });
 
   it("returns null when message content is not JSON", async () => {
     vi.stubGlobal(
