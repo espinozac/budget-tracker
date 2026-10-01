@@ -352,10 +352,10 @@ The enhancement is AI category suggestions: history first, with an optional LLM 
 **Rules**
 
 - It works with no API key: suggestions come from history, and the LLM only covers descriptions history has never seen.
-- The key is optional and server-side only (`ANTHROPIC_API_KEY` in `server/.env`); the browser never calls the model.
-- One adapter, `server/src/llm.ts`, owns the provider call, the prompt, a timeout of about 3 seconds, and Zod validation of the reply.
+- The LLM is Groq's free tier through its OpenAI-compatible API. The key is optional and server-side only (`LLM_API_KEY` in `server/.env`); the browser never calls the model.
+- One adapter, `server/src/llm.ts`, owns the call (plain `fetch` to `/chat/completions`, no SDK), the prompt, a timeout of about 3 seconds, and Zod validation of the reply. A 429 from the free tier's rate limit is treated like any other failure.
 - A suggestion never overwrites what the user typed, and it is announced to screen readers.
-- The README says it plainly: "Optional key; without it, suggestions use history only."
+- The README says it plainly: "Optional free Groq key; without it, suggestions use history only."
 
 **Why this feature**
 
@@ -369,28 +369,28 @@ Also considered: natural-language filters, smart paste, and an AI spending summa
 
 - `POST /api/categories/suggest` takes `{ description, type }` and returns `{ category, source }`, where `source` is `history`, `ai`, or `none`.
 - History first: the most recent transaction with the same description (after lowercase and trim) supplies the category.
-- Otherwise, with a key set: one call to a small, fast model, given the user's existing categories as the preferred list. The reply is validated with Zod as a short name, under the timeout.
+- Otherwise, with a key set: one call to a small, fast model on Groq (default `llama-3.1-8b-instant`, configurable), given the user's existing categories as the preferred list. The reply is validated with Zod as a short name, under the timeout.
 - No key, a timeout, or bad output returns `none`, and the form works as before.
 - Client: on description blur, if category is still empty and untouched, fill it and label it "Suggested from your history" (or "by AI"). The live region announces it, and a typed category is never replaced.
 
 **Key files**
 
 - `server/src/suggest.ts`: `suggestCategory(input, history, llm?)`. The history match is pure; the model call arrives as a function, so tests pass a stub.
-- `server/src/llm.ts`: the provider call, prompt, output check, and timeout. The env names assume Anthropic; any provider fits behind this file.
+- `server/src/llm.ts`: the OpenAI-compatible chat call, prompt, output check, and timeout. Any OpenAI-compatible endpoint (Groq, local Ollama) works by changing the env values.
 - `server/src/routes/categories.ts`: the suggest route. `createApp(store, { llm })` takes the function as a plain parameter.
 - `client/src/api.ts` and `client/src/components/TransactionForm.tsx`: the call and the labeled suggestion.
-- `server/.env.example`: optional `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`.
+- `server/.env.example`: `LLM_BASE_URL=https://api.groq.com/openai/v1`, `LLM_MODEL=llama-3.1-8b-instant`, and an empty `LLM_API_KEY` (optional; get a free key at console.groq.com).
 
 **Tests first**
 
 - The no-key path: a history hit returns its category with `source: "history"` and never calls the model.
-- A stubbed model returns a category; junk output or a thrown error returns `none`.
+- A stubbed model returns a category with `source: "ai"`; junk output, a thrown error, a timeout, and a 429 rate limit each return `none`. Tests stub the model and never call Groq.
 - Route: 400 for a blank description; 200 with the stubbed model.
 
 **Done when**
 
 - [ ] With no key set, the feature still demos on a cold start (the seed data gives it history to use).
-- [ ] With a key set, the LLM path works and times out cleanly.
+- [ ] With a free Groq key set, the LLM path works, times out cleanly, and falls back to `none` on a 429.
 - [ ] The core logic is a small unit-tested function, and one route test covers the endpoint.
 - [ ] Usable by keyboard and screen reader, with async results announced.
 - [ ] README states the optional key and the no-key behavior; WRITEUP covers why, the value, and the trade-offs; the new endpoint is documented.
@@ -408,7 +408,7 @@ A reviewer goes from clone to running app by following the README word for word,
 - Test: `pnpm test` and `pnpm typecheck`.
 - Environment variables: a table mirroring `server/.env.example`, marking each one required or optional.
 - API: the five brief endpoints plus every extension: `GET /api/categories`, the extra query params (`minAmount`, `maxAmount`, `startDate`, `endDate`), the summary's `filteredTotals` shape, and the AI endpoint, with two `curl` examples.
-- AI suggestions: "Optional key; without it, suggestions use history only", plus the env var to set.
+- AI suggestions: "Optional free Groq key; without it, suggestions use history only", plus how to get the key and which env var to set.
 - Notes: a one-line pointer to how the brief was interpreted (the WRITEUP and the Decisions in `docs/PLAN.md`), the persistence choice and how to reset data, the seed data, and known limits.
 
 **WRITEUP** (aim for about 500 words)
@@ -490,6 +490,7 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
+| 2026-10-01 | Claude (Cowork) with Carlos | Phase 5 LLM: Groq free tier via OpenAI-compatible fetch (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`) instead of Anthropic. | pending |
 | 2026-10-01 | Cursor | Phase 4 polish R1-R5: focus first invalid filter field; visible delete failure alert; focusOnMount only after Edit/Cancel/Save; Net balance back in summary dl; show 4xx message above list. | 8c565ee |
 | 2026-10-01 | Cursor | Phase 4 review fixes: B1 range validation + no full-page on 4xx + retry skip 4xx; S1 delete catch; S2 emerald-700; S3 form key remount; S4 friendly Zod messages; S5 untick commit; N2/N3/N5/N6/N7/N9 cleanup. N1 Clear all stays draft-only (user request; note in WRITEUP). N4 single table and N10 client unit tests not done (cut item 1). N8 left for Phase 5. | 8c565ee |
 | 2026-10-01 | Cursor | Phase 4 items 4-6: amount/date range filters, filtered totals line above list, edit via same form (PUT). Ranges verified with query params; summary stays all-time. | 8c565ee |
