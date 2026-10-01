@@ -25,7 +25,7 @@ Read this section before doing anything else.
 | 1. Scaffold the monorepo | 25 min | Done (2026-09-30) | |
 | 2. Domain model, schemas, and store | 30 min | Done (2026-09-30) | CONVENTIONS synced in Phase 1 |
 | 3. REST endpoints | 30 min | Done (2026-10-01) | |
-| 4. React UI | 65 min | Done (2026-10-01) | Review fixes applied; commit still pending |
+| 4. React UI | 65 min | Done (2026-10-01) | Full build order 1-6; review + R1-R5 polish |
 | 5. AI enhancement | 45 min | Not started | AI category suggestions |
 | 6. README and WRITEUP | 25 min | Not started | |
 
@@ -341,7 +341,7 @@ flowchart TD
 - [x] Unless cut (log any cut in the Progress log): the range inputs filter correctly, the filtered totals line matches the visible rows while the panel stays all-time, and Edit saves through PUT.
 - [x] Loading, empty, no-match, and server-down states each render.
 - [x] A keyboard-only pass works: tab order, visible focus, Enter submits, labels announced.
-- [ ] `pnpm typecheck` passes; commit.
+- [x] `pnpm typecheck` passes; commit.
 - [x] Mid-phase check at about 2:00: if search, type, and category filters are not working yet, take cut items 2 to 4 now, which drops build-order items 4 to 6.
 - [ ] Clock check: past about 2:30, take the cut list before Phase 5.
 
@@ -490,10 +490,10 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
-| 2026-10-01 | Cursor | Phase 4 polish R1-R5: focus first invalid filter field; visible delete failure alert; focusOnMount only after Edit/Cancel/Save; Net balance back in summary dl; show 4xx message above list. | pending |
-| 2026-10-01 | Cursor | Phase 4 review fixes: B1 range validation + no full-page on 4xx + retry skip 4xx; S1 delete catch; S2 emerald-700; S3 form key remount; S4 friendly Zod messages; S5 untick commit; N2/N3/N5/N6/N7/N9 cleanup. N1 Clear all stays draft-only (user request; note in WRITEUP). N4 single table and N10 client unit tests not done (cut item 1). N8 left for Phase 5. | pending |
-| 2026-10-01 | Cursor | Phase 4 items 4-6: amount/date range filters, filtered totals line above list, edit via same form (PUT). Ranges verified with query params; summary stays all-time. | pending |
-| 2026-10-01 | Cursor | Phase 4 (items 1-3): TanStack Query + zod, api.ts, useTransactions/useDebouncedValue, SummaryPanel, TransactionList (delete), TransactionForm (validation + AI blur hook), FilterBar (search + type/category Apply/Close/Clear/Escape). Bank-inspired centralized Tailwind layout (navy/orange). Cut pending go-ahead: amount/date ranges, filtered totals line, edit. No sonner/lucide/cn/component kit. | pending |
+| 2026-10-01 | Cursor | Phase 4 polish R1-R5: focus first invalid filter field; visible delete failure alert; focusOnMount only after Edit/Cancel/Save; Net balance back in summary dl; show 4xx message above list. | 8c565ee |
+| 2026-10-01 | Cursor | Phase 4 review fixes: B1 range validation + no full-page on 4xx + retry skip 4xx; S1 delete catch; S2 emerald-700; S3 form key remount; S4 friendly Zod messages; S5 untick commit; N2/N3/N5/N6/N7/N9 cleanup. N1 Clear all stays draft-only (user request; note in WRITEUP). N4 single table and N10 client unit tests not done (cut item 1). N8 left for Phase 5. | 8c565ee |
+| 2026-10-01 | Cursor | Phase 4 items 4-6: amount/date range filters, filtered totals line above list, edit via same form (PUT). Ranges verified with query params; summary stays all-time. | 8c565ee |
+| 2026-10-01 | Cursor | Phase 4 (items 1-3): TanStack Query + zod, api.ts, useTransactions/useDebouncedValue, SummaryPanel, TransactionList (delete), TransactionForm (validation + AI blur hook), FilterBar (search + type/category Apply/Close/Clear/Escape). Bank-inspired centralized Tailwind layout (navy/orange). Cut pending go-ahead: amount/date ranges, filtered totals line, edit. No sonner/lucide/cn/component kit. | 8c565ee |
 | 2026-10-01 | Cursor | Phase 3: REST routes (transactions/summary/categories), HttpError/parse, createApp(store, options) with allowFutureDates, JSON 404 and error handler, file-backed boot+seed. Review fixes: tsx --env-file-if-exists, narrow malformed-JSON detection, forward Express 4xx (413), tighter route tests, curl keepers in NOTES. Plan Key files updated for createApp options. | 876260c |
 | 2026-10-01 | Cursor | Phase 2: shared Zod schemas/types, server store (cents, JSON write-through), seed, server env schemas. Review fixes: exact 2-decimal amounts, trimmed query blanks, case-insensitive categories(), calendar-month seed, NOTES. `2026-02-30` rejected by `z.iso.date()` (no extra refine). Replaced `HealthStatus`; added server `zod` catalog dep. | a49a62d |
 | 2026-09-30 | Cursor | Phase 1 scaffold: pnpm workspace (client/server/shared), Express `/api/health`, Vite+Tailwind proxy, agent files, CONVENTIONS sync. Root `dev`/`test` use `--if-present` (shared has neither). packageManager `pnpm@12.8.1`. | b3f66a5 |
