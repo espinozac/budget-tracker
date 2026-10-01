@@ -23,7 +23,7 @@ Read this section before doing anything else.
 | Phase | Estimate | Status | Notes |
 | --- | --- | --- | --- |
 | 1. Scaffold the monorepo | 25 min | Done (2026-09-30) | |
-| 2. Domain model, schemas, and store | 30 min | Not started | CONVENTIONS synced in Phase 1 |
+| 2. Domain model, schemas, and store | 30 min | Done (2026-09-30) | CONVENTIONS synced in Phase 1 |
 | 3. REST endpoints | 30 min | Not started | |
 | 4. React UI | 65 min | Not started | Leave the suggest-on-blur hook in the form; confirm UI packages at the start |
 | 5. AI enhancement | 45 min | Not started | AI category suggestions |
@@ -193,10 +193,10 @@ The model keeps the brief's six fields unchanged. Ordering uses insertion order 
 
 **Done when**
 
-- [ ] Schema and store tests pass.
-- [ ] No `any`; every `as` carries a one-line reason.
-- [ ] Writes go through a temp file and a rename, so a crash mid-write cannot corrupt the data.
-- [ ] Commit.
+- [x] Schema and store tests pass.
+- [x] No `any`; every `as` carries a one-line reason.
+- [x] Writes go through a temp file and a rename, so a crash mid-write cannot corrupt the data.
+- [x] Commit.
 
 ## Phase 3: REST endpoints (about 30 min)
 
@@ -490,7 +490,8 @@ Newest first. One line per work session: date, who, what changed, commit (write 
 
 | Date | Who | Change | Commit |
 | --- | --- | --- | --- |
-| 2026-09-30 | Cursor | Phase 1 scaffold: pnpm workspace (client/server/shared), Express `/api/health`, Vite+Tailwind proxy, agent files, CONVENTIONS sync. Root `dev`/`test` use `--if-present` (shared has neither). packageManager `pnpm@12.8.1`. | pending |
+| 2026-10-01 | Cursor | Phase 2: shared Zod schemas/types, server store (cents, JSON write-through), seed, server env schemas. Review fixes: exact 2-decimal amounts, trimmed query blanks, case-insensitive categories(), calendar-month seed, NOTES. `2026-02-30` rejected by `z.iso.date()` (no extra refine). Replaced `HealthStatus`; added server `zod` catalog dep. | pending |
+| 2026-09-30 | Cursor | Phase 1 scaffold: pnpm workspace (client/server/shared), Express `/api/health`, Vite+Tailwind proxy, agent files, CONVENTIONS sync. Root `dev`/`test` use `--if-present` (shared has neither). packageManager `pnpm@12.8.1`. | b3f66a5 |
 | 2026-09-30 | Claude (Cowork) with Carlos | Locked AI category suggestions; TanStack Query for client server state; Phase 4 done list allows logged cuts; Phase 2 gated on the CONVENTIONS sync; `DATA_FILE` resolution noted; `docs/BRIEF.pdf` gitignored. | 2ce707b |
 | 2026-09-30 | Claude (Cowork) with Carlos | Applied the plan review: Node 22 LTS in `.nvmrc`; the enhancement is an AI feature, picked before Phase 4; Phase 1 and 6 checklists; Phase 4 build order; cut list reordered; brief kept out of git. | d047c38 |
 | 2026-09-30 | Claude (Cowork) with Carlos | Plan drafted and reviewed; all 13 decisions accepted; saved as `docs/PLAN.md`. | fec7308 |

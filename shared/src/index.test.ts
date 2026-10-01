@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { HealthStatus } from "./index";
+import { TransactionTypeSchema } from "./index";
 
 describe("@budget/shared", () => {
-  it("exports a HealthStatus placeholder type", () => {
-    const status: HealthStatus = { ok: true };
-    expect(status.ok).toBe(true);
+  it("re-exports domain schemas", () => {
+    expect(TransactionTypeSchema.safeParse("income").success).toBe(true);
   });
 });

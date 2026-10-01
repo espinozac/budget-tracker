@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import type { HealthStatus } from "@budget/shared";
+
+type HealthResponse = { ok: boolean };
 
 export function App() {
-  const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [health, setHealth] = useState<HealthResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -13,8 +14,8 @@ export function App() {
         if (!res.ok) {
           throw new Error(`Health check failed (${res.status})`);
         }
-        // Response matches HealthStatus from @budget/shared
-        return (await res.json()) as HealthStatus;
+        // Health scaffold shape is local until Phase 3 wires shared API types
+        return (await res.json()) as HealthResponse;
       })
       .then((body) => {
         if (!cancelled) {

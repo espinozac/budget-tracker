@@ -1,4 +1,20 @@
-/** Placeholder type proving both apps can import from @budget/shared. */
-export type HealthStatus = {
-  ok: boolean;
-};
+export {
+  ApiErrorBodySchema,
+  SummarySchema,
+  TotalsSchema,
+  TransactionInputSchema,
+  TransactionQuerySchema,
+  TransactionSchema,
+  TransactionTypeSchema,
+  withNoFutureDates,
+} from "./schemas";
+
+export type {
+  ApiErrorBody,
+  Summary,
+  Totals,
+  Transaction,
+  TransactionInput,
+  TransactionQuery,
+  TransactionType,
+} from "./types";
